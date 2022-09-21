@@ -8,6 +8,21 @@ import "solmate/src/tokens/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+enum GraduationTiers { 
+        HONORS,
+        ENGINEERS,
+        FOUNDERS,
+        OG,
+        ALUM
+}
+
+struct AlumniData {
+        bool claimed;
+        uint16 blockNumber;
+        GraduationTiers graduationTier;
+}
+
+
 contract MacroAlumniSBT is ERC721 {
 
     uint256 tokenSupply; // total # of tokens
@@ -16,20 +31,7 @@ contract MacroAlumniSBT is ERC721 {
 
     bytes32 public root; // merkle root 
 
-    mapping (address => bool) claimed;
-
-    struct StudentData {
-        uint16 block;
-        GraduationTiers graduationTier;
-    }
-
-    enum GraduationTiers { 
-        HONORS,
-        ENGINEERS,
-        FOUNDERS,
-        OG,
-        ALUM
-    }
+    mapping (address => AlumniData) addressToAlumniData;
 
     constructor () ERC721("Macro Alumni Soulbound Token", "MASBT") {}
 
@@ -54,10 +56,10 @@ contract MacroAlumniSBT is ERC721 {
     function mint (bytes32[] calldata proof) external {
         require(_verify(_leaf(msg.sender), proof), "Invalid merkle proof");
         require(claimed[msg.sender] == false, "CLAIMED");
-        _mint(msg.sender, nextTokenID);
-        emit Locked(nextTokenID);
+        _mint(msg.sender, tokenSupply);
+        emit Locked(tokenSupply);
         unchecked {
-            nextTokenID++;
+            tokenSupply++;
         }
     }
 
@@ -94,6 +96,11 @@ contract MacroAlumniSBT is ERC721 {
     /// @param _baseURI the URI which returns the NFT metadata
     function setBaseURI (string calldata _baseURI) external onlyAdmin {
         baseTokenURI = _baseURI;
+    }
+
+    function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData) {
+        address owner = ownerOf(tokenId);
+        return addressToAlumniData[owner];
     }
 
     function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
