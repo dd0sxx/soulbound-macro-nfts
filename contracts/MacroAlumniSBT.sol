@@ -53,20 +53,28 @@ contract MacroAlumniSBT is ERC721 {
     /// @notice TODO
     /// @dev TODO
     /// @param proof merkle proof
-    function mint (bytes32[] calldata proof) external {
-        require(_verify(_leaf(msg.sender), proof), "Invalid merkle proof");
-        require(claimed[msg.sender] == false, "CLAIMED");
+    function mint (uint16 blockNumber, GraduationTiers graduationTier, bytes32[] calldata proof) external {
+        require(_verify(_leaf(msg.sender, blockNumber, graduationTier), proof), "INVALID_PROOF");
+        require(addressToAlumniData[msg.sender].claimed == false, "CLAIMED");
+
+        addressToAlumniData[msg.sender].claimed = true;
+        addressToAlumniData[msg.sender].blockNumber = blockNumber;
+        addressToAlumniData[msg.sender].graduationTier = graduationTier;
+
         _mint(msg.sender, tokenSupply);
-        emit Locked(tokenSupply);
         unchecked {
             tokenSupply++;
         }
+
+        emit Locked(tokenSupply);
     }
 
     /// @notice TODO
-    /// @dev TODO
+    /// @dev before calling burn, make sure to remove the owner's address from the merkletree first and update the merkleroot by calling setMerkleRoot to prevent 
     /// @param tokenId tokenId which will be burned
     function burn (uint256 tokenId) external onlyAdmin {
+        address owner = ownerOf(tokenId);
+        delete addressToAlumniData[owner];
         _burn(tokenId);
     }
 
@@ -98,7 +106,11 @@ contract MacroAlumniSBT is ERC721 {
         baseTokenURI = _baseURI;
     }
 
-    function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData) {
+    function setMerkleRoot (bytes32 _root) external onlyAdmin {
+        root = _root;
+    }
+
+    function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData memory) {
         address owner = ownerOf(tokenId);
         return addressToAlumniData[owner];
     }
@@ -119,8 +131,8 @@ contract MacroAlumniSBT is ERC721 {
         return true;
     }
 
-    function _leaf(address account) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(account));
+    function _leaf(address account, uint16 blockNumber, GraduationTiers graduationTier) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(account, blockNumber, graduationTier));
     }
 
     function _verify(bytes32 leaf, bytes32[] memory proof) internal view returns (bool) {
