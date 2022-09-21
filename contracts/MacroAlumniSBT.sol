@@ -6,18 +6,35 @@ pragma solidity ^0.8.15;
 
 import "solmate/src/tokens/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract MacroAlumniSBT is ERC721 {
 
+    uint256 tokenSupply; // total # of tokens
+    string baseTokenURI; // baseURI where the NFT metadata is located
+    address admin; // instruction multisig
 
-    uint256 nextTokenID;
-    string baseTokenURI;
-    address admin;
+    bytes32 public root; // merkle root 
+
+    mapping (address => bool) claimed;
+
+    struct StudentData {
+        uint16 block;
+        GraduationTiers graduationTier;
+    }
+
+    enum GraduationTiers { 
+        HONORS,
+        ENGINEERS,
+        FOUNDERS,
+        OG,
+        ALUM
+    }
 
     constructor () ERC721("Macro Alumni Soulbound Token", "MASBT") {}
 
     modifier onlyAdmin {
-        require(msg.sender == admin, "ADMIN_ONLY");
+        require(msg.sender == admin, "ONLY_ADMIN");
         _;
     }
 
@@ -31,8 +48,12 @@ contract MacroAlumniSBT is ERC721 {
     /// @param tokenId The identifier for a token.
     event Unlocked(uint256 tokenId);
 
-    function mint (address to) external {
-        require(balanceOf(msg.sender) == 0, "BALANCE_NON_ZERO");
+    /// @notice TODO
+    /// @dev TODO
+    /// @param proof merkle proof
+    function mint (bytes32[] calldata proof) external {
+        require(_verify(_leaf(msg.sender), proof), "Invalid merkle proof");
+        require(claimed[msg.sender] == false, "CLAIMED");
         _mint(msg.sender, nextTokenID);
         emit Locked(nextTokenID);
         unchecked {
@@ -40,15 +61,37 @@ contract MacroAlumniSBT is ERC721 {
         }
     }
 
+    /// @notice TODO
+    /// @dev TODO
+    /// @param tokenId tokenId which will be burned
     function burn (uint256 tokenId) external onlyAdmin {
         _burn(tokenId);
     }
 
+    /// @notice TODO
+    /// @dev TODO
+    /// @param from address of token holder wishing to transfer their token
+    /// @param to address the token will be transfered to
+    /// @param id token id that will be transfered
+    function transferFrom(
+        address from,
+        address to,
+        uint256 id
+    ) public override onlyAdmin { 
+        super.transferFrom(from, to, id);
+    }
+
+    /// @notice TODO
+    /// @dev TODO
+    /// @param id the token id for the asset being requested
     function tokenURI(uint256 id) public view override returns (string memory) {
         ownerOf(id); // ownerOf will revert if the token does not exist
         return string.concat(baseTokenURI, Strings.toString(id), ".json");
     }
 
+    /// @notice TODO
+    /// @dev TODO
+    /// @param _baseURI the URI which returns the NFT metadata
     function setBaseURI (string calldata _baseURI) external onlyAdmin {
         baseTokenURI = _baseURI;
     }
@@ -67,6 +110,14 @@ contract MacroAlumniSBT is ERC721 {
     /// @param tokenId The identifier for an SBT.
     function locked(uint256 tokenId) external view returns (bool) {
         return true;
+    }
+
+    function _leaf(address account) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(account));
+    }
+
+    function _verify(bytes32 leaf, bytes32[] memory proof) internal view returns (bool) {
+        return MerkleProof.verify(proof, root, leaf);
     }
 
 }
