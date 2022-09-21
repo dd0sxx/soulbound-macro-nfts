@@ -70,7 +70,7 @@ contract MacroAlumniSBT is ERC721 {
     }
 
     /// @notice TODO
-    /// @dev before calling burn, make sure to remove the owner's address from the merkletree first and update the merkleroot by calling setMerkleRoot to prevent 
+    /// @dev before calling burn, make sure to remove the owner's address from the merkletree and update the merkleroot by calling setMerkleRoot first to prevent the alumni from minting a token from the address that is having its token burned
     /// @param tokenId tokenId which will be burned
     function burn (uint256 tokenId) external onlyAdmin {
         address owner = ownerOf(tokenId);
