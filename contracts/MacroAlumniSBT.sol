@@ -51,8 +51,12 @@ contract MacroAlumniSBT is ERC721 {
         baseTokenURI = _baseURI;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == 0xb45a3c0e || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public pure override returns (bool) {
+        return 
+            interfaceId == 0xb45a3c0e || // ERC165 Interface ID for ERC5192
+            interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
+            interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
+            interfaceId == 0x5b5e139f;   // ERC165 Interface ID for ERC721Metadata
     }
 
     /// @notice Returns the locking status of an Soulbound Token
