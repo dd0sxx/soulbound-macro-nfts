@@ -5,6 +5,7 @@ pragma solidity ^0.8.15;
 // import "hardhat/console.sol";
 
 import "solmate/src/tokens/ERC721.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract MacroAlumniSBT is ERC721 {
 
@@ -44,7 +45,8 @@ contract MacroAlumniSBT is ERC721 {
     }
 
     function tokenURI(uint256 id) public view override returns (string memory) {
-        return "";
+        ownerOf(id); // ownerOf will revert if the token does not exist
+        return string.concat(baseTokenURI, Strings.toString(id), ".json");
     }
 
     function setBaseURI (string calldata _baseURI) external onlyAdmin {
