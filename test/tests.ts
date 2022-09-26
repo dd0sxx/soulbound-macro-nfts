@@ -2,6 +2,7 @@ import { MacroAlumniSBT } from './../typechain-types/contracts/MacroAlumniSBT';
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import type { JsonRpcSigner } from "@ethersproject/providers/src.ts/json-rpc-provider"
 import { expect } from "chai";
 import { ethers } from "hardhat";
 const { MerkleTree } = require("merkletreejs");
@@ -21,7 +22,7 @@ interface StudentMerkleLeaf {
   graduationTier: GraduationTiers
 }
 
-const dataRaw: StudentMerkleLeaf[] = [
+let dataRaw: StudentMerkleLeaf[] = [
   {
     address: "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
     blockNumber: 1,
@@ -44,9 +45,13 @@ const dataRaw: StudentMerkleLeaf[] = [
   }
 ];
 
-const leaves = dataRaw.map((x) => keccak256(x.address, x.blockNumber, x.graduationTier));
+let merkleTree: any, leaves: any
 
-const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+function generateMerkleTree (): any {
+  leaves = dataRaw.map((x) => ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [x.address, x.blockNumber, x.graduationTier]));
+  merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+}
+
 
 let owner: SignerWithAddress, otherAccount: SignerWithAddress
 let contract: MacroAlumniSBT
@@ -70,13 +75,25 @@ describe("Macro Alumni Soulbound Token", function () {
   })
 
   it("Should allow owner to set merkle root", async function () {
+    generateMerkleTree()
     let mr = merkleTree.getHexRoot()
     await contract.setMerkleRoot(mr);
     expect(await contract.root()).to.deep.equal(mr)
   })
 
-  it("", async function () {
+  it("Should allow alumni to mint", async function () {
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
 
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+
+    expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
   })
 
   it("", async function () {
