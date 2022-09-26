@@ -103,14 +103,14 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
     /// @notice TODO
     /// @dev TODO
-    /// @param _baseURI the URI which returns the NFT metadata
+    /// @param _root the new merkle root
     function setMerkleRoot (bytes32 _root) external onlyOwner {
         root = _root;
     }
 
     /// @notice TODO
     /// @dev TODO
-    /// @param _baseURI the URI which returns the NFT metadata
+    /// @param tokenId the id for the SBT token
     function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData memory) {
         address owner = ownerOf(tokenId);
         return addressToAlumniData[owner];

@@ -4,7 +4,7 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-let owner, otherAccount
+let owner:any, otherAccount:any
 let contract: MacroAlumniSBT
 
 describe("Macro Alumni Soulbound Token", function () {
@@ -21,8 +21,8 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.supportsInterface('0x5b5e139f')).to.deep.equal(true)
   });
 
-  it("Should", async function () {
-    
+  it("Should set the owner to be the deployer", async function () {
+    expect(await contract.owner()).to.deep.equal(owner.address)
   })
 
   it("", async function () {
