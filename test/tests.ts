@@ -4,6 +4,49 @@ import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+const { MerkleTree } = require("merkletreejs");
+const keccak256 = require("keccak256");
+
+enum  GraduationTiers { 
+  HONORS,
+  ENGINEERS,
+  FOUNDERS,
+  OG,
+  ALUM
+}
+
+interface StudentMerkleLeaf {
+  address: string,
+  blockNumber: number
+  graduationTier: GraduationTiers
+}
+
+const dataRaw: StudentMerkleLeaf[] = [
+  {
+    address: "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+    blockNumber: 1,
+    graduationTier: GraduationTiers.OG
+  },
+  {
+    address: "0xfeedfeedfeedfeedfeedfeedfeedfeedfeedfeed",
+    blockNumber: 4,
+    graduationTier: GraduationTiers.ALUM
+  },
+  {
+    address: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    blockNumber: 7,
+    graduationTier: GraduationTiers.ENGINEERS
+  },
+  {
+    address: "0x7Eb696df980734DD592EBDd9dfC39F189aDc5456",
+    blockNumber: 1,
+    graduationTier: GraduationTiers.HONORS
+  }
+];
+
+const leaves = dataRaw.map((x) => keccak256(x.address, x.blockNumber, x.graduationTier));
+
+const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
 
 let owner: SignerWithAddress, otherAccount: SignerWithAddress
 let contract: MacroAlumniSBT
@@ -27,7 +70,9 @@ describe("Macro Alumni Soulbound Token", function () {
   })
 
   it("Should allow owner to set merkle root", async function () {
-
+    let mr = merkleTree.getHexRoot()
+    await contract.setMerkleRoot(mr);
+    expect(await contract.root()).to.deep.equal(mr)
   })
 
   it("", async function () {
