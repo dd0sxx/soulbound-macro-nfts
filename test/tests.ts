@@ -1,10 +1,11 @@
 import { MacroAlumniSBT } from './../typechain-types/contracts/MacroAlumniSBT';
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-let owner:any, otherAccount:any
+let owner: SignerWithAddress, otherAccount: SignerWithAddress
 let contract: MacroAlumniSBT
 
 describe("Macro Alumni Soulbound Token", function () {
@@ -23,6 +24,22 @@ describe("Macro Alumni Soulbound Token", function () {
 
   it("Should set the owner to be the deployer", async function () {
     expect(await contract.owner()).to.deep.equal(owner.address)
+  })
+
+  it("Should allow owner to set merkle root", async function () {
+
+  })
+
+  it("", async function () {
+
+  })
+
+  it("", async function () {
+
+  })
+
+  it("", async function () {
+
   })
 
   it("", async function () {
