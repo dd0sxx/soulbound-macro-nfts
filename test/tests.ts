@@ -1,14 +1,34 @@
+import { MacroAlumniSBT } from './../typechain-types/contracts/MacroAlumniSBT';
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+let owner, otherAccount
+let contract: MacroAlumniSBT
+
 describe("Macro Alumni Soulbound Token", function () {
   beforeEach(async function () {
-    const [owner, otherAccount] = await ethers.getSigners();
-    const Lock = await ethers.getContractFactory("Lock");
+    [owner, otherAccount] = await ethers.getSigners();
+    const Contract = await ethers.getContractFactory("MacroAlumniSBT");
+    contract = await Contract.deploy()
   })
-});
+
+  it("Should support interfaces", async function () {
+    expect(await contract.supportsInterface('0xb45a3c0e')).to.deep.equal(true)
+    expect(await contract.supportsInterface('0x01ffc9a7')).to.deep.equal(true)
+    expect(await contract.supportsInterface('0x80ac58cd')).to.deep.equal(true)
+    expect(await contract.supportsInterface('0x5b5e139f')).to.deep.equal(true)
+  });
+
+  it("Should", async function () {
+    
+  })
+
+  it("", async function () {
+
+  })
+})
 
 // // We define a fixture to reuse the same setup in every test.
 // // We use loadFixture to run this setup once, snapshot that state,

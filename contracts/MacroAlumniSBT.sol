@@ -7,6 +7,7 @@ pragma solidity ^0.8.15;
 import "solmate/src/tokens/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 enum GraduationTiers { 
         HONORS,
@@ -23,22 +24,16 @@ struct AlumniData {
 }
 
 
-contract MacroAlumniSBT is ERC721 {
+contract MacroAlumniSBT is ERC721, Ownable {
 
     uint256 tokenSupply; // total # of tokens
     string baseTokenURI; // baseURI where the NFT metadata is located
-    address admin; // instruction multisig
 
     bytes32 public root; // merkle root 
 
     mapping (address => AlumniData) addressToAlumniData;
 
     constructor () ERC721("Macro Alumni Soulbound Token", "MASBT") {}
-
-    modifier onlyAdmin {
-        require(msg.sender == admin, "ONLY_ADMIN");
-        _;
-    }
 
     /// @notice Emitted when the locking status is changed to locked.
     /// @dev If a token is minted and the status is locked, this event should be emitted.
@@ -72,7 +67,7 @@ contract MacroAlumniSBT is ERC721 {
     /// @notice TODO
     /// @dev before calling burn, make sure to remove the owner's address from the merkletree and update the merkleroot by calling setMerkleRoot first to prevent the alumni from minting a token from the address that is having its token burned
     /// @param tokenId tokenId which will be burned
-    function burn (uint256 tokenId) external onlyAdmin {
+    function burn (uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
         delete addressToAlumniData[owner];
         _burn(tokenId);
@@ -87,7 +82,7 @@ contract MacroAlumniSBT is ERC721 {
         address from,
         address to,
         uint256 id
-    ) public override onlyAdmin { 
+    ) public override onlyOwner { 
         super.transferFrom(from, to, id);
     }
 
@@ -102,14 +97,20 @@ contract MacroAlumniSBT is ERC721 {
     /// @notice TODO
     /// @dev TODO
     /// @param _baseURI the URI which returns the NFT metadata
-    function setBaseURI (string calldata _baseURI) external onlyAdmin {
+    function setBaseURI (string calldata _baseURI) external onlyOwner {
         baseTokenURI = _baseURI;
     }
 
-    function setMerkleRoot (bytes32 _root) external onlyAdmin {
+    /// @notice TODO
+    /// @dev TODO
+    /// @param _baseURI the URI which returns the NFT metadata
+    function setMerkleRoot (bytes32 _root) external onlyOwner {
         root = _root;
     }
 
+    /// @notice TODO
+    /// @dev TODO
+    /// @param _baseURI the URI which returns the NFT metadata
     function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData memory) {
         address owner = ownerOf(tokenId);
         return addressToAlumniData[owner];
