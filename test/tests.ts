@@ -94,37 +94,71 @@ describe("Macro Alumni Soulbound Token", function () {
     await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
   })
-
+  
   it("Should not allow non alumni to mint, even with a valid proof", async function () {
-
+    
     dataRaw[0].address = otherAccount.address
     const alumni = dataRaw[0]
-
+    
     generateMerkleTree()
     await contract.setMerkleRoot(merkleTree.getHexRoot());
-
+    
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
-
+    
     expect(contract.mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("INVALID_PROOF")
   })
   
   it("Should not allow an alumni to claim twice", async function () {
     
-        dataRaw[0].address = otherAccount.address
-        const alumni = dataRaw[0]
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
     
-        generateMerkleTree()
-        await contract.setMerkleRoot(merkleTree.getHexRoot());
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
     
-        const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-        const proof = merkleTree.getHexProof(leaf);
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
     
-        await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
-        
-        expect(contract.mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
     
+    expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+    
+  })
+  
+  it("Admin can burn tokens", async function () {
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
+    
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
+    
+    await contract.burn(0)
+    expect(await contract.balanceOf(alumni.address)).to.deep.equal(0)
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ false, 0, 0])
+    expect(contract.tokenIdToAlumniData(0)).to.be.revertedWith("NOT_MINTED")
+  })
+
+  it("", async function () {
+
+  })
+
+  it("", async function () {
+
   })
 
   it("", async function () {

@@ -31,7 +31,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
     bytes32 public root; // merkle root 
 
-    mapping (address => AlumniData) addressToAlumniData;
+    mapping (address => AlumniData) public addressToAlumniData;
 
     constructor () ERC721("Macro Alumni Soulbound Token", "MASBT") {}
 
@@ -111,7 +111,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @notice TODO
     /// @dev TODO
     /// @param tokenId the id for the SBT token
-    function tokenToAlumniData (uint256 tokenId) external view returns (AlumniData memory) {
+    function tokenIdToAlumniData (uint256 tokenId) external view returns (AlumniData memory) {
         address owner = ownerOf(tokenId);
         return addressToAlumniData[owner];
     }
