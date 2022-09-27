@@ -19,6 +19,7 @@ enum GraduationTiers {
 
 struct AlumniData {
         bool claimed;
+        bool burned;
         uint16 blockNumber;
         GraduationTiers graduationTier;
 }
@@ -50,7 +51,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @param proof merkle proof
     function mint (uint16 blockNumber, GraduationTiers graduationTier, bytes32[] calldata proof) external {
         require(_verify(_leaf(msg.sender, blockNumber, graduationTier), proof), "INVALID_PROOF");
-        require(addressToAlumniData[msg.sender].claimed == false, "CLAIMED");
+        require(addressToAlumniData[msg.sender].claimed == false && addressToAlumniData[msg.sender].burned == false, "CLAIMED");
 
         addressToAlumniData[msg.sender].claimed = true;
         addressToAlumniData[msg.sender].blockNumber = blockNumber;
@@ -69,7 +70,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @param tokenId tokenId which will be burned
     function burn (uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
-        delete addressToAlumniData[owner];
+        addressToAlumniData[owner].burned = true;
         _burn(tokenId);
     }
 
@@ -83,7 +84,9 @@ contract MacroAlumniSBT is ERC721, Ownable {
         address to,
         uint256 id
     ) public override onlyOwner { 
+        emit Unlocked(id);
         super.transferFrom(from, to, id);
+        emit Locked(id);
     }
 
     /// @notice TODO

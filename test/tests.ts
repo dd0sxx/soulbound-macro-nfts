@@ -94,8 +94,8 @@ describe("Macro Alumni Soulbound Token", function () {
     await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
   })
   
   it("Should not allow non alumni to mint, even with a valid proof", async function () {
@@ -125,8 +125,8 @@ describe("Macro Alumni Soulbound Token", function () {
     
     await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
     
     expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
     
@@ -144,17 +144,31 @@ describe("Macro Alumni Soulbound Token", function () {
     
     await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ true, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([ true, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
+
+    expect(contract.connect(otherAccount).burn(0)).to.be.revertedWith("Ownable: caller is not the owner")
     
     await contract.burn(0)
     expect(await contract.balanceOf(alumni.address)).to.deep.equal(0)
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([ false, 0, 0])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, true, 1, 3])
     expect(contract.tokenIdToAlumniData(0)).to.be.revertedWith("NOT_MINTED")
   })
 
-  it("", async function () {
+  it("Alumni cannot mint token after their token has been burned", async function () {
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
+    
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await contract.burn(0)
 
+    expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
   })
 
   it("", async function () {
