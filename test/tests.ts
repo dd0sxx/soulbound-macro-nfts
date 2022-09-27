@@ -171,12 +171,38 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
   })
 
-  it("", async function () {
+  it("Tokens are locked and non-transferable", async function () {
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
+    
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
 
+    expect(await contract.locked(0)).to.deep.equal(true);
+
+    expect(contract.connect(otherAccount).transferFrom(otherAccount.address, owner.address, 0)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
-  it("", async function () {
+  it("Admins can transfer tokens on behalf of alumni", async function () {
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
+    
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
 
+    expect(await contract.locked(0)).to.deep.equal(true);
+
+    await contract.transferFrom(otherAccount.address, owner.address, 0)
   })
 })
 

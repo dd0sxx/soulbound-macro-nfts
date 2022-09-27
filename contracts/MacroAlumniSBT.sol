@@ -58,9 +58,13 @@ contract MacroAlumniSBT is ERC721, Ownable {
         addressToAlumniData[msg.sender].graduationTier = graduationTier;
 
         _mint(msg.sender, tokenSupply);
+
+        approve(owner(), tokenSupply);
+
         unchecked {
             tokenSupply++;
         }
+
 
         emit Locked(tokenSupply);
     }
@@ -84,9 +88,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
         address to,
         uint256 id
     ) public override onlyOwner { 
-        emit Unlocked(id);
         super.transferFrom(from, to, id);
-        emit Locked(id);
     }
 
     /// @notice TODO
