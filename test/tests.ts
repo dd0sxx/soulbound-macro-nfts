@@ -45,7 +45,22 @@ let dataRaw: StudentMerkleLeaf[] = [
   }
 ];
 
-let merkleTree: any, leaves: any
+let merkleTree: any, leaves: string, proof: string[]
+
+let alumni: StudentMerkleLeaf
+
+let generateMerkleTreeAndMint = async function () {
+  dataRaw[0].address = otherAccount.address
+    alumni = dataRaw[0]
+    
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    
+    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+}
 
 function generateMerkleTree (): any {
   leaves = dataRaw.map((x) => ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [x.address, x.blockNumber, x.graduationTier]));
@@ -113,17 +128,8 @@ describe("Macro Alumni Soulbound Token", function () {
   })
   
   it("Should not allow an alumni to claim twice", async function () {
-    
-    dataRaw[0].address = otherAccount.address
-    const alumni = dataRaw[0]
-    
-    generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
-    
-    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-    const proof = merkleTree.getHexProof(leaf);
-    
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await generateMerkleTreeAndMint();
+
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
     expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
@@ -133,16 +139,8 @@ describe("Macro Alumni Soulbound Token", function () {
   })
   
   it("Admin can burn tokens", async function () {
-    dataRaw[0].address = otherAccount.address
-    const alumni = dataRaw[0]
-    
-    generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
-    
-    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-    const proof = merkleTree.getHexProof(leaf);
-    
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await generateMerkleTreeAndMint();
+
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
     expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
@@ -156,53 +154,35 @@ describe("Macro Alumni Soulbound Token", function () {
   })
 
   it("Alumni cannot mint token after their token has been burned", async function () {
-    dataRaw[0].address = otherAccount.address
-    const alumni = dataRaw[0]
-    
-    generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
-    
-    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-    const proof = merkleTree.getHexProof(leaf);
-    
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await generateMerkleTreeAndMint();
+
     await contract.burn(0)
 
     expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
   })
 
   it("Tokens are locked and non-transferable", async function () {
-    dataRaw[0].address = otherAccount.address
-    const alumni = dataRaw[0]
+    await generateMerkleTreeAndMint();
     
-    generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
-    
-    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-    const proof = merkleTree.getHexProof(leaf);
-    
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
-
     expect(await contract.locked(0)).to.deep.equal(true);
 
     expect(contract.connect(otherAccount).transferFrom(otherAccount.address, owner.address, 0)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
   it("Admins can transfer tokens on behalf of alumni", async function () {
-    dataRaw[0].address = otherAccount.address
-    const alumni = dataRaw[0]
-    
-    generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
-    
-    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
-    const proof = merkleTree.getHexProof(leaf);
-    
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await generateMerkleTreeAndMint();
 
     expect(await contract.locked(0)).to.deep.equal(true);
 
     await contract.transferFrom(otherAccount.address, owner.address, 0)
+  })
+
+  it("Should return the correct token URI", async function () {
+    await generateMerkleTreeAndMint();
+
+    await contract.setBaseURI("https://0xmacro.com/alumniSBT/")
+
+    expect(await contract.tokenURI(0)).to.deep.equal("https://0xmacro.com/alumniSBT/0.json")
   })
 })
 
