@@ -96,12 +96,35 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
   })
 
-  it("", async function () {
+  it("Should not allow non alumni to mint, even with a valid proof", async function () {
 
+    dataRaw[0].address = otherAccount.address
+    const alumni = dataRaw[0]
+
+    generateMerkleTree()
+    await contract.setMerkleRoot(merkleTree.getHexRoot());
+
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+
+    expect(contract.mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("INVALID_PROOF")
   })
-
-  it("", async function () {
-
+  
+  it("Should not allow an alumni to claim twice", async function () {
+    
+        dataRaw[0].address = otherAccount.address
+        const alumni = dataRaw[0]
+    
+        generateMerkleTree()
+        await contract.setMerkleRoot(merkleTree.getHexRoot());
+    
+        const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+        const proof = merkleTree.getHexProof(leaf);
+    
+        await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+        
+        expect(contract.mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+    
   })
 
   it("", async function () {
