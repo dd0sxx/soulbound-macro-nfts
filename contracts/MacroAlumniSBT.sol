@@ -35,13 +35,16 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
     /// @notice Emitted when the locking status is changed to locked.
     /// @dev If a token is minted and the status is locked, this event should be emitted.
-    /// @param tokenId The identifier for a token.
+    /// @param tokenId The identifier for a token
     event Locked(uint256 tokenId);
 
-    /// @notice Emitted when the locking status is changed to unlocked.
-    /// @dev If a token is minted and the status is unlocked, this event should be emitted.
-    /// @param tokenId The identifier for a token.
-    event Unlocked(uint256 tokenId);
+    /// @notice Emitted when the setMerkleRoot function is called successfully
+    /// @param root The new merkle root
+    event MerkleRootSet(bytes32 root);
+
+    /// @notice Emitted when the setBaseURI function is called successfully
+    /// @param baseURI The new baseTokenURI
+    event BaseURISet(string baseURI);
 
     /// @notice Function for alumni to claim their SBT
     /// @param to address they would like to soul bound the token to
@@ -99,12 +102,14 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @param _baseURI the URI which returns the NFT metadata
     function setBaseURI (string calldata _baseURI) external onlyOwner {
         baseTokenURI = _baseURI;
+        emit BaseURISet(_baseURI);
     }
 
     /// @notice this function will need to be called at the end of every block to enable new grads to claim their tokens
     /// @param _root the new merkle root
     function setMerkleRoot (bytes32 _root) external onlyOwner {
         root = _root;
+        emit MerkleRootSet(_root);
     }
 
     function updateStudentGraduationTier (address alumniAddress, GraduationTiers newTier) external onlyOwner {
