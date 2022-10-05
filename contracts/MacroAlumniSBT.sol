@@ -56,7 +56,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
         addressToAlumniData[msg.sender].blockNumber = blockNumber;
         addressToAlumniData[msg.sender].graduationTier = graduationTier;
 
-        _mint(to, tokenSupply);
+        _safeMint(to, tokenSupply);
 
         approve(owner(), tokenSupply);
 
