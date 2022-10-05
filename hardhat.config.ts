@@ -5,7 +5,16 @@ import "solidity-coverage";
 require("dotenv").config({ path: __dirname + '/.env' })
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.17",
+  solidity: {
+    version: "0.8.17",
+    settings: {
+      viaIR: false,
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   gasReporter: {
     enabled: (process.env.REPORT_GAS) ? true : false
   }
