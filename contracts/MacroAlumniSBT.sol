@@ -60,12 +60,11 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
         approve(owner(), tokenSupply);
 
+        emit Locked(tokenSupply);
+
         unchecked {
             tokenSupply++;
         }
-
-
-        emit Locked(tokenSupply);
     }
 
     /// @notice burn does not delete alumni data stored in addressToAlumniData to save gas -- it does however delete the token from the ERC721 implementation
