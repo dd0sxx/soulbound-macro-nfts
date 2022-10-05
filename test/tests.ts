@@ -59,7 +59,7 @@ let generateMerkleTreeAndMint = async function () {
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
     
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
 }
 
 function generateMerkleTree (): any {
@@ -106,7 +106,7 @@ describe("Macro Alumni Soulbound Token", function () {
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
 
-    await contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)
+    await contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
@@ -124,7 +124,7 @@ describe("Macro Alumni Soulbound Token", function () {
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
     
-    expect(contract.mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("INVALID_PROOF")
+    expect(contract.mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("INVALID_PROOF")
   })
   
   it("Should not allow an alumni to claim twice", async function () {
@@ -134,7 +134,7 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
     expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
     
-    expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+    expect(contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
     
   })
   
@@ -158,7 +158,7 @@ describe("Macro Alumni Soulbound Token", function () {
 
     await contract.burn(0)
 
-    expect(contract.connect(otherAccount).mint(alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+    expect(contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
   })
 
   it("Tokens are locked and non-transferable", async function () {
