@@ -1,3 +1,4 @@
+import { Contract } from 'ethers';
 import { MacroAlumniSBT } from './../typechain-types/contracts/MacroAlumniSBT';
 import { time, loadFixture } from "@nomicfoundation/hardhat-network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
@@ -191,5 +192,12 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.locked(0)).to.deep.equal(true)
     await contract.burn(0)
     expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN")
+  })
+  
+  it("Should allow admin to update a students graduation tier", async function () {
+    await generateMerkleTreeAndMint()
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
+    await contract.updateStudentGraduationTier(alumni.address, 0)
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 0])
   })
 })
