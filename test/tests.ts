@@ -184,4 +184,12 @@ describe("Macro Alumni Soulbound Token", function () {
 
     expect(await contract.tokenURI(0)).to.deep.equal("https://0xmacro.com/alumniSBT/0.json")
   })
+
+  it("Should revert when locked is called with an invalid token id", async function () {
+    expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN")
+    await generateMerkleTreeAndMint()
+    expect(await contract.locked(0)).to.deep.equal(true)
+    await contract.burn(0)
+    expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN")
+  })
 })
