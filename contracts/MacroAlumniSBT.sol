@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.15;
-
-// Uncomment this line to use console.log
-import "hardhat/console.sol";
+pragma solidity 0.8.17;
 
 import "solmate/src/tokens/ERC721.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
