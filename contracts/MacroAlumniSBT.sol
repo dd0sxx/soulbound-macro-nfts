@@ -24,14 +24,23 @@ struct AlumniData {
 
 contract MacroAlumniSBT is ERC721, Ownable {
 
-    uint256 tokenSupply; // total # of tokens
-    string baseTokenURI; // baseURI where the NFT metadata is located
+    uint256 public tokenSupply; // total # of tokens
+    string public baseTokenURI; // baseURI where the NFT metadata is located
 
     bytes32 public root; // merkle root 
 
     mapping (address => AlumniData) public addressToAlumniData;
 
-    constructor () ERC721("Macro Alumni Soulbound Token", "MASBT") {}
+    /// @param _baseURI the URI which returns the NFT metadata
+    /// @param _root the new merkle root
+    /// @param _owner the address of the admin of the contract
+    constructor (string memory _baseURI, bytes32 _root, address _owner) ERC721("Macro Alumni Soulbound Token", "MASBT") {
+        baseTokenURI = _baseURI;
+        emit BaseURISet(_baseURI);
+        root = _root;
+        emit MerkleRootSet(_root);
+        transferOwnership(_owner);
+    }
 
     /// @notice Emitted when the locking status is changed to locked.
     /// @dev If a token is minted and the status is locked, this event should be emitted.

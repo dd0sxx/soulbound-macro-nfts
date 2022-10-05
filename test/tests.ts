@@ -75,8 +75,9 @@ let contract: MacroAlumniSBT
 describe("Macro Alumni Soulbound Token", function () {
   beforeEach(async function () {
     [owner, otherAccount] = await ethers.getSigners();
+    generateMerkleTree()
     const Contract = await ethers.getContractFactory("MacroAlumniSBT");
-    contract = await Contract.deploy()
+    contract = await Contract.deploy("ipfs://deadbeef", merkleTree.getHexRoot(), owner.address)
   })
 
   it("Should support interfaces", async function () {
@@ -86,7 +87,9 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.supportsInterface('0x5b5e139f')).to.deep.equal(true)
   });
 
-  it("Should set the owner to be the deployer", async function () {
+  it("Should initialize properly", async function () {
+    expect(await contract.baseTokenURI()).to.deep.equal("ipfs://deadbeef")
+    expect(await contract.root()).to.deep.equal(merkleTree.getHexRoot())
     expect(await contract.owner()).to.deep.equal(owner.address)
   })
 
