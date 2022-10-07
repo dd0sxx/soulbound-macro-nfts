@@ -206,6 +206,14 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(contract.connect(otherAccount).updateStudentGraduationTier(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
+  it("Should allow admin to update a students block number", async function () {
+    await generateMerkleTreeAndMint()
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
+    await contract.updateStudentBlockNumber(alumni.address, 0)
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 0, 3])
+    expect(contract.connect(otherAccount).updateStudentBlockNumber(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
+  })
+
   it("Should protect against non-admin calls to safeTransferFrom", async function () {
     expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256)'](otherAccount.address,owner.address,0)).to.be.revertedWith("Ownable: caller is not the owner")
     expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256,bytes)'](otherAccount.address,owner.address,0,'0xdeadbeef')).to.be.revertedWith("Ownable: caller is not the owner")
