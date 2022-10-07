@@ -55,7 +55,7 @@ let generateMerkleTreeAndMint = async function () {
     alumni = dataRaw[0]
     
     generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    await contract.connect(owner).setMerkleRoot(merkleTree.getHexRoot());
     
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
@@ -69,15 +69,15 @@ function generateMerkleTree (): any {
 }
 
 
-let owner: SignerWithAddress, otherAccount: SignerWithAddress
+let owner: SignerWithAddress, otherAccount: SignerWithAddress, otherotherAccount: SignerWithAddress
 let contract: MacroAlumniSBT
 
 describe("Macro Alumni Soulbound Token", function () {
   beforeEach(async function () {
-    [owner, otherAccount] = await ethers.getSigners();
+    [owner, otherAccount, otherotherAccount] = await ethers.getSigners();
     generateMerkleTree()
     const Contract = await ethers.getContractFactory("MacroAlumniSBT");
-    contract = await Contract.deploy("ipfs://deadbeef/", merkleTree.getHexRoot(), owner.address)
+    contract = await Contract.connect(otherotherAccount).deploy("ipfs://deadbeef/", merkleTree.getHexRoot(), owner.address)
   })
 
   it("Should support interfaces", async function () {
@@ -96,7 +96,7 @@ describe("Macro Alumni Soulbound Token", function () {
   it("Should allow owner to set merkle root", async function () {
     generateMerkleTree()
     let mr = merkleTree.getHexRoot()
-    await contract.setMerkleRoot(mr);
+    await contract.connect(owner).setMerkleRoot(mr);
     expect(await contract.root()).to.deep.equal(mr)
   })
 
@@ -105,7 +105,7 @@ describe("Macro Alumni Soulbound Token", function () {
     const alumni = dataRaw[0]
 
     generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    await contract.connect(owner).setMerkleRoot(merkleTree.getHexRoot());
 
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
@@ -113,8 +113,8 @@ describe("Macro Alumni Soulbound Token", function () {
     await contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([1, 3])
   })
   
   it("Should not allow non alumni to mint, even with a valid proof", async function () {
@@ -123,7 +123,7 @@ describe("Macro Alumni Soulbound Token", function () {
     const alumni = dataRaw[0]
     
     generateMerkleTree()
-    await contract.setMerkleRoot(merkleTree.getHexRoot());
+    await contract.connect(owner).setMerkleRoot(merkleTree.getHexRoot());
     
     const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
     const proof = merkleTree.getHexProof(leaf);
@@ -135,8 +135,8 @@ describe("Macro Alumni Soulbound Token", function () {
     await generateMerkleTreeAndMint();
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([1, 3])
     
     expect(contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
     
@@ -146,21 +146,21 @@ describe("Macro Alumni Soulbound Token", function () {
     await generateMerkleTreeAndMint();
 
     expect(await contract.ownerOf(0)).to.deep.equal((alumni.address))
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, false, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([1, 3])
 
     expect(contract.connect(otherAccount).burn(0)).to.be.revertedWith("Ownable: caller is not the owner")
     
-    await contract.burn(0)
+    await contract.connect(owner).burn(0)
     expect(await contract.balanceOf(alumni.address)).to.deep.equal(0)
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, true, 1, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([0, 0])
     expect(contract.tokenIdToAlumniData(0)).to.be.revertedWith("NOT_MINTED")
   })
 
   it("Alumni cannot mint token after their token has been burned", async function () {
     await generateMerkleTreeAndMint();
 
-    await contract.burn(0)
+    await contract.connect(owner).burn(0)
 
     expect(contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
   })
@@ -177,14 +177,19 @@ describe("Macro Alumni Soulbound Token", function () {
     await generateMerkleTreeAndMint();
 
     expect(await contract.locked(0)).to.deep.equal(true);
-
-    await contract.transferFrom(otherAccount.address, owner.address, 0)
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([1, 3])
+    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([0, 0])
+    
+    await contract.connect(owner).transferFrom(otherAccount.address, otherotherAccount.address, 0)
+    expect(await contract.ownerOf(0)).to.deep.equal(otherotherAccount.address)
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([0, 0])
+    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([1, 3])
   })
 
   it("Should return the correct token URI", async function () {
     await generateMerkleTreeAndMint();
 
-    await contract.setBaseURI("https://0xmacro.com/alumniSBT/")
+    await contract.connect(owner).setBaseURI("https://0xmacro.com/alumniSBT/")
 
     expect(await contract.tokenURI(0)).to.deep.equal("https://0xmacro.com/alumniSBT/0.json")
   })
@@ -193,24 +198,24 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN")
     await generateMerkleTreeAndMint()
     expect(await contract.locked(0)).to.deep.equal(true)
-    await contract.burn(0)
+    await contract.connect(owner).burn(0)
     expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN")
   })
   
   it("Should allow admin to update a students graduation tier", async function () {
     await generateMerkleTreeAndMint()
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
-    await contract.updateStudentGraduationTier(alumni.address, 0)
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 0])
-    expect(contract.updateStudentGraduationTier(alumni.address, 6)).to.be.revertedWith("function was called with incorrect parameters")
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 3])
+    await contract.connect(owner).updateStudentGraduationTier(alumni.address, 0)
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 0])
+    expect(contract.connect(owner).updateStudentGraduationTier(alumni.address, 6)).to.be.revertedWith("function was called with incorrect parameters")
     expect(contract.connect(otherAccount).updateStudentGraduationTier(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
   it("Should allow admin to update a students block number", async function () {
     await generateMerkleTreeAndMint()
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
-    await contract.updateStudentBlockNumber(alumni.address, 0)
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 0, 3])
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([1, 3])
+    await contract.connect(owner).updateStudentBlockNumber(alumni.address, 0)
+    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([0, 3])
     expect(contract.connect(otherAccount).updateStudentBlockNumber(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
