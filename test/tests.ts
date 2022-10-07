@@ -77,7 +77,7 @@ describe("Macro Alumni Soulbound Token", function () {
     [owner, otherAccount] = await ethers.getSigners();
     generateMerkleTree()
     const Contract = await ethers.getContractFactory("MacroAlumniSBT");
-    contract = await Contract.deploy("ipfs://deadbeef", merkleTree.getHexRoot(), owner.address)
+    contract = await Contract.deploy("ipfs://deadbeef/", merkleTree.getHexRoot(), owner.address)
   })
 
   it("Should support interfaces", async function () {
@@ -88,7 +88,7 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it("Should initialize properly", async function () {
-    expect(await contract.baseTokenURI()).to.deep.equal("ipfs://deadbeef")
+    expect(await contract.baseTokenURI()).to.deep.equal("ipfs://deadbeef/")
     expect(await contract.root()).to.deep.equal(merkleTree.getHexRoot())
     expect(await contract.owner()).to.deep.equal(owner.address)
   })
@@ -202,5 +202,10 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 3])
     await contract.updateStudentGraduationTier(alumni.address, 0)
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 0])
+  })
+
+  it("Should protect against non-admin calls to safeTransferFrom", async function () {
+    expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256)'](otherAccount.address,owner.address,0)).to.be.revertedWith("Ownable: caller is not the owner")
+    expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256,bytes)'](otherAccount.address,owner.address,0,'0xdeadbeef')).to.be.revertedWith("Ownable: caller is not the owner")
   })
 })
