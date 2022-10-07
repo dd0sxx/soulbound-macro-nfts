@@ -67,7 +67,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
         addressToAlumniData[to].blockNumber = blockNumber;
         addressToAlumniData[to].graduationTier = graduationTier;
 
-        _safeMint(to, tokenSupply);
+        _safeMint(to, tokenSupply); // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
 
         approve(owner(), tokenSupply);
   
