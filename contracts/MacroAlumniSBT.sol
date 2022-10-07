@@ -122,7 +122,6 @@ contract MacroAlumniSBT is ERC721, Ownable {
     }
 
     function updateStudentGraduationTier (address alumniAddress, GraduationTiers newTier) external onlyOwner {
-        require(uint(newTier) <= 4, "INVALID_ENUM");
         addressToAlumniData[alumniAddress].graduationTier = newTier;
     }
 
