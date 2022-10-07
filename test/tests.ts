@@ -203,6 +203,7 @@ describe("Macro Alumni Soulbound Token", function () {
     await contract.updateStudentGraduationTier(alumni.address, 0)
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, false, 1, 0])
     expect(contract.updateStudentGraduationTier(alumni.address, 6)).to.be.revertedWith("function was called with incorrect parameters")
+    expect(contract.connect(otherAccount).updateStudentGraduationTier(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
   })
 
   it("Should protect against non-admin calls to safeTransferFrom", async function () {
