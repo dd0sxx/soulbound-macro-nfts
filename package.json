@@ -2,7 +2,9 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.11.2"
+    "hardhat": "^2.11.2",
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.24"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.7.3",
@@ -15,6 +17,7 @@
     "solmate": "^6.6.1"
   },
   "scripts": {
+    "prettier": "prettier '**/*.{json,sol,md}' --write",
     "code-coverage": "npx hardhat coverage --network localhost"
   }
 }
