@@ -69,15 +69,15 @@ function generateMerkleTree (): any {
 }
 
 
-let owner: SignerWithAddress, otherAccount: SignerWithAddress, otherotherAccount: SignerWithAddress, differentAlumni: SignerWithAddress
+let owner: SignerWithAddress, otherAccount: SignerWithAddress, otherOtherAccount: SignerWithAddress, differentAlumni: SignerWithAddress, differentOwner: SignerWithAddress
 let contract: MacroAlumniSBT
 
 describe("Macro Alumni Soulbound Token", function () {
   beforeEach(async function () {
-    [owner, otherAccount, otherotherAccount, differentAlumni] = await ethers.getSigners();
+    [owner, otherAccount, otherOtherAccount, differentAlumni, differentOwner] = await ethers.getSigners();
     generateMerkleTree()
     const Contract = await ethers.getContractFactory("MacroAlumniSBT");
-    contract = await Contract.connect(otherotherAccount).deploy("ipfs://deadbeef/", merkleTree.getHexRoot(), owner.address)
+    contract = await Contract.connect(otherOtherAccount).deploy("ipfs://deadbeef/", merkleTree.getHexRoot(), owner.address)
   })
 
   it("Should support interfaces", async function () {
@@ -219,7 +219,7 @@ describe("Macro Alumni Soulbound Token", function () {
 
     expect(await contract.locked(0)).to.deep.equal(true);
     expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
     
     expect(contract.connect(owner).transferFrom(otherAccount.address, otherAccount.address, 0)).to.be.revertedWith("INVALID")
   })
@@ -229,12 +229,12 @@ describe("Macro Alumni Soulbound Token", function () {
 
     expect(await contract.locked(0)).to.deep.equal(true);
     expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
     
-    await contract.connect(owner).transferFrom(otherAccount.address, otherotherAccount.address, 0)
-    expect(await contract.ownerOf(0)).to.deep.equal(otherotherAccount.address)
+    await contract.connect(owner).transferFrom(otherAccount.address, otherOtherAccount.address, 0)
+    expect(await contract.ownerOf(0)).to.deep.equal(otherOtherAccount.address)
     expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([false, 0, 0])
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([true, 1, 3])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([true, 1, 3])
   })
 
   it("Should still allow the owner to transfer SBT's, even after they transfer", async function () {
@@ -242,18 +242,18 @@ describe("Macro Alumni Soulbound Token", function () {
 
     expect(await contract.locked(0)).to.deep.equal(true);
     expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
 
     // transfer the first time
-    await contract.connect(owner).transferFrom(otherAccount.address, otherotherAccount.address, 0)
-    expect(await contract.ownerOf(0)).to.deep.equal(otherotherAccount.address)
+    await contract.connect(owner).transferFrom(otherAccount.address, otherOtherAccount.address, 0)
+    expect(await contract.ownerOf(0)).to.deep.equal(otherOtherAccount.address)
     expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([false, 0, 0])
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([true, 1, 3])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([true, 1, 3])
 
     // transfer the second time
-    await contract.connect(owner).transferFrom(otherotherAccount.address, owner.address, 0)
+    await contract.connect(owner).transferFrom(otherOtherAccount.address, owner.address, 0)
     expect(await contract.ownerOf(0)).to.deep.equal(owner.address)
-    expect(await contract.addressToAlumniData(otherotherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
     expect(await contract.addressToAlumniData(owner.address)).to.deep.equal([true, 1, 3])
   })
 
@@ -289,9 +289,58 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, 0, 3])
     expect(contract.connect(otherAccount).updateStudentBlockNumber(alumni.address, 1)).to.be.revertedWith("Ownable: caller is not the owner")
   })
-
+  
   it("Should protect against non-admin calls to safeTransferFrom", async function () {
     expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256)'](otherAccount.address,owner.address,0)).to.be.revertedWith("Ownable: caller is not the owner")
     expect(contract.connect(otherAccount)['safeTransferFrom(address,address,uint256,bytes)'](otherAccount.address,owner.address,0,'0xdeadbeef')).to.be.revertedWith("Ownable: caller is not the owner")
+  })
+  
+  it("Should allow new owner to transfer tokens after transfering ownership of the contract", async function () {
+    await generateMerkleTreeAndMint();
+
+    expect(await contract.locked(0)).to.deep.equal(true);
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
+    
+    await contract.connect(owner).transferFrom(otherAccount.address, otherOtherAccount.address, 0)
+    expect(await contract.ownerOf(0)).to.deep.equal(otherOtherAccount.address)
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([true, 1, 3])
+    
+    await contract.connect(owner).transferOwnership(differentOwner.address);
+    
+    await contract.connect(differentOwner).transferFrom(otherOtherAccount.address, differentAlumni.address, 0)
+    expect(await contract.ownerOf(0)).to.deep.equal(differentAlumni.address)
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(differentAlumni.address)).to.deep.equal([true, 1, 3])
+  })
+
+  it("Should not break when transfering ownership of the contract after tokens have been burned", async function () {
+    await generateMerkleTreeAndMint()
+    dataRaw[1].address = differentAlumni.address
+    const alumni = dataRaw[1]
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+    await contract.connect(differentAlumni).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
+    
+    expect(await contract.ownerOf(0)).to.deep.equal(otherAccount.address)
+    expect(await contract.ownerOf(1)).to.deep.equal(differentAlumni.address)
+    expect(await contract.locked(0)).to.deep.equal(true);
+    expect(await contract.locked(1)).to.deep.equal(true);
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
+    expect(await contract.addressToAlumniData(differentAlumni.address)).to.deep.equal([true, 4, 4])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([false, 0, 0])
+
+    await contract.connect(owner).burn(0)
+    expect(contract.ownerOf(0)).to.be.revertedWith("NOT_MINTED")
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([false, 0, 0])
+    
+    await contract.connect(owner).transferOwnership(differentOwner.address);
+    expect(await contract.owner()).to.deep.equal(differentOwner.address)
+    
+    await contract.connect(differentOwner).transferFrom(differentAlumni.address, otherOtherAccount.address, 1)
+    expect(await contract.ownerOf(1)).to.deep.equal(otherOtherAccount.address)
+    expect(await contract.addressToAlumniData(differentAlumni.address)).to.deep.equal([false, 0, 0])
+    expect(await contract.addressToAlumniData(otherOtherAccount.address)).to.deep.equal([true, 4, 4])
   })
 })

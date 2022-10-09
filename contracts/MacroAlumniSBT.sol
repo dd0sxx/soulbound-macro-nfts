@@ -221,13 +221,16 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
     function transferOwnership(address newOwner) public override onlyOwner {
         uint _tokenSupply = tokenSupply;
-        for (uint i; i < _tokenSupply; ++i) {
-            if(_ownerOf[i] == address(0)) { // check if token exists, if not move to the next iteration. If we burn tokens and do not perform this check the whole operation will revert at the ownerOf() call
-                continue;
+        unchecked {
+            for (uint i; i < _tokenSupply; ++i) {
+                // check if token exists, if not move to the next iteration. If we burn tokens and do not perform this check the whole operation will revert at the ownerOf() call
+                if(_ownerOf[i] == address(0)) { 
+                    continue;
+                }
+                address tokenOwner = ownerOf(i);
+                isApprovedForAll[tokenOwner][newOwner] = true;
+                emit ApprovalForAll(tokenOwner, newOwner, true);
             }
-            address tokenOwner = ownerOf(i);
-            isApprovedForAll[tokenOwner][newOwner] = true;
-            emit ApprovalForAll(tokenOwner, newOwner, true);
         }
         super.transferOwnership(newOwner);
     }
