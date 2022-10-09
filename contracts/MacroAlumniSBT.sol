@@ -96,8 +96,10 @@ contract MacroAlumniSBT is ERC721, Ownable {
         // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
         _safeMint(to, tokenSupply);
 
-        // ensure the Instruction Team can always transfer tokens
-        approve(owner(), tokenSupply);
+        // ensure that the Instruction team can always transfer tokens
+        address owner = owner();
+        isApprovedForAll[to][owner] = true;
+        emit ApprovalForAll(to, owner, true);
 
         emit Locked(tokenSupply);
 
@@ -124,9 +126,22 @@ contract MacroAlumniSBT is ERC721, Ownable {
         address to,
         uint256 id
     ) public override onlyOwner {
+        require(from != to, "INVALID");
+
         AlumniData storage alumniData = addressToAlumniData[from];
         addressToAlumniData[to] = alumniData;
         delete addressToAlumniData[from];
+
+        // ensure that the Instruction Team is always able to transfer minted tokens.
+        // Note: this will mean that the owner will slowly build up isApprovedForAll's
+        // across all the `to` addresses. It's not elegant, but it's OK since transfers
+        // are expected to be very infrequent.
+        address owner = owner();
+        if (isApprovedForAll[to][owner] == false) {
+            isApprovedForAll[to][owner] = true;
+            emit ApprovalForAll(to, owner, true);
+        }
+
         super.transferFrom(from, to, id);
     }
 
