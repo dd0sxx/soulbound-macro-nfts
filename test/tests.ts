@@ -46,7 +46,7 @@ let dataRaw: StudentMerkleLeaf[] = [
   }
 ];
 
-let merkleTree: any, leaves: string, proof: string[]
+let merkleTree: any
 
 let alumni: StudentMerkleLeaf
 
@@ -64,7 +64,7 @@ let generateMerkleTreeAndMint = async function () {
 }
 
 function generateMerkleTree (): any {
-  leaves = dataRaw.map((x) => ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [x.address, x.blockNumber, x.graduationTier]));
+  const leaves = dataRaw.map((x) => ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [x.address, x.blockNumber, x.graduationTier]));
   merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true });
 }
 
@@ -138,7 +138,29 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, 1, 3])
     expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3])
 
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+
     expect(contract.connect(otherAccount).mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)).to.be.revertedWith("CLAIMED")
+  })
+
+
+  it("Should not allow one alumni to overwrite the data of another alumni when minting their SBT", async function () {
+    dataRaw[1].address = differentAlumni.address
+
+    await generateMerkleTreeAndMint();
+
+    expect(await contract.ownerOf(0)).to.deep.equal((otherAccount.address))
+    expect(await contract.addressToAlumniData(otherAccount.address)).to.deep.equal([true, 1, 3])
+    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3])
+
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [differentAlumni.address, dataRaw[1].blockNumber, dataRaw[1].graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
+
+    expect(contract.connect(differentAlumni).mint(otherAccount.address, dataRaw[1].blockNumber, dataRaw[1].graduationTier, proof)).to.be.revertedWith("ALREADY_EXISTS")
+
+    // now successfully mint to a different address
+    await contract.connect(differentAlumni).mint(differentAlumni.address, dataRaw[1].blockNumber, dataRaw[1].graduationTier, proof)
   })
 
   it("Admin can burn tokens", async function () {
@@ -158,6 +180,9 @@ describe("Macro Alumni Soulbound Token", function () {
 
   it("Alumni cannot mint token after their token has been burned", async function () {
     await generateMerkleTreeAndMint();
+
+    const leaf = ethers.utils.solidityKeccak256(["address", "uint16", "uint8"], [alumni.address, alumni.blockNumber, alumni.graduationTier])
+    const proof = merkleTree.getHexProof(leaf);
 
     await contract.connect(owner).burn(0)
 
