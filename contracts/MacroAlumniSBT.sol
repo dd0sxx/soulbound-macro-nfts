@@ -53,7 +53,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
         emit BaseURISet(_baseURI);
         root = _root;
         emit MerkleRootSet(_root);
-        transferOwnership(_owner);
+        _transferOwnership(_owner);
     }
 
     /// @notice Emitted when the locking status is changed to locked.
@@ -189,7 +189,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @notice this is a convience function to enable alumni data to be queried by token id rather than by owner address
     /// @param tokenId the id for the SBT token
     function tokenIdToAlumniData(uint256 tokenId)
-        external
+        public
         view
         returns (AlumniData memory)
     {
@@ -217,6 +217,19 @@ contract MacroAlumniSBT is ERC721, Ownable {
     function locked(uint256 tokenId) external view returns (bool) {
         require(ownerOf(tokenId) != address(0), "INVALID_TOKEN");
         return true;
+    }
+
+    function transferOwnership(address newOwner) public override onlyOwner {
+        uint _tokenSupply = tokenSupply;
+        for (uint i; i < _tokenSupply; ++i) {
+            if(_ownerOf[i] == address(0)) { // check if token exists, if not move to the next iteration. If we burn tokens and do not perform this check the whole operation will revert at the ownerOf() call
+                continue;
+            }
+            address tokenOwner = ownerOf(i);
+            isApprovedForAll[tokenOwner][newOwner] = true;
+            emit ApprovalForAll(tokenOwner, newOwner, true);
+        }
+        super.transferOwnership(newOwner);
     }
 
     /// @dev this function returns the hash of alumni data, also known as a leaf in our merkle tree
