@@ -15,10 +15,12 @@ enum GraduationTiers {
 }
 
 /// @notice this struct contains all of the data important to an alumni's graduation
+/// @param exists true if this struct has been assigned to an SBT
 /// @param blockNumber Macro refers to each group of students as a "block", and the first
 /// group of students who graduated were part of block 0
 /// @param graduationTier the ranking of the alumni
 struct AlumniData {
+    bool exists;
     uint16 blockNumber;
     GraduationTiers graduationTier;
 }
@@ -83,12 +85,16 @@ contract MacroAlumniSBT is ERC721, Ownable {
             "INVALID_PROOF"
         );
         require(claimed[msg.sender] == false, "CLAIMED");
+        require(addressToAlumniData[to].exists == false, "ALREADY_EXISTS");
 
         claimed[msg.sender] = true;
+
+        addressToAlumniData[to].exists = true;
         addressToAlumniData[to].blockNumber = blockNumber;
         addressToAlumniData[to].graduationTier = graduationTier;
 
-        _safeMint(to, tokenSupply); // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
+        // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
+        _safeMint(to, tokenSupply);
 
         // ensure the Instruction Team can always transfer tokens
         approve(owner(), tokenSupply);
