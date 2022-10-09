@@ -14,21 +14,32 @@ enum GraduationTiers {
     ALUM
 }
 
+/// @notice this struct contains all of the data important to an alumni's graduation
+/// @param blockNumber Macro refers to each group of students as a "block", and the first
+/// group of students who graduated were part of block 0
+/// @param graduationTier the ranking of the alumni
 struct AlumniData {
     uint16 blockNumber;
     GraduationTiers graduationTier;
 }
 
 contract MacroAlumniSBT is ERC721, Ownable {
-    uint256 public tokenSupply; // total # of tokens
-    string public baseTokenURI; // baseURI where the NFT metadata is located
+    /// @notice the total number of tokens, and the ID of the next SBT to be minted
+    uint256 public tokenSupply;
+    /// @notice baseURI where the SBT metadata is located
+    string public baseTokenURI;
 
+    /// @notice the Merkle root used to prove inclusion in the MerkleDrop
     bytes32 public root; // merkle root
 
+    /// @notice mapping used to store info about the alumni's SBT
     mapping(address => AlumniData) public addressToAlumniData;
+
+    /// @notice mapping used to keep track of which addresses have
+    /// already claimed their SBT
     mapping(address => bool) public claimed;
 
-    /// @param _baseURI the URI which returns the NFT metadata
+    /// @param _baseURI the URI which returns the SBT metadata
     /// @param _root the new merkle root
     /// @param _owner the address of the admin of the contract
     constructor(
@@ -79,6 +90,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
         _safeMint(to, tokenSupply); // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
 
+        // ensure the Instruction Team can always transfer tokens
         approve(owner(), tokenSupply);
 
         emit Locked(tokenSupply);
@@ -133,6 +145,9 @@ contract MacroAlumniSBT is ERC721, Ownable {
         emit MerkleRootSet(_root);
     }
 
+    /// @notice set a new graduationTier for a particular address that holds an SBT
+    /// @param alumniAddress the address that owns the SBT
+    /// @param newTier the new tier for this SBT
     function updateStudentGraduationTier(
         address alumniAddress,
         GraduationTiers newTier
@@ -140,11 +155,14 @@ contract MacroAlumniSBT is ERC721, Ownable {
         addressToAlumniData[alumniAddress].graduationTier = newTier;
     }
 
+    /// @notice set a new blockNumber for a particular address that holds an SBT
+    /// @param alumniAddress the address that owns the SBT
+    /// @param newNumber the new block for this SBT
     function updateStudentBlockNumber(
         address alumniAddress,
-        uint16 _blockNumber
+        uint16 newNumber
     ) external onlyOwner {
-        addressToAlumniData[alumniAddress].blockNumber = _blockNumber;
+        addressToAlumniData[alumniAddress].blockNumber = newNumber;
     }
 
     /// @notice this is a convience function to enable alumni data to be queried by token id rather than by owner address
