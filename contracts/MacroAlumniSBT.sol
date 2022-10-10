@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.17;
 
-import "solmate/src/tokens/ERC721.sol";
+import "./ERC721Admin.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 enum GraduationTiers {
     HONORS,
@@ -25,9 +24,10 @@ struct AlumniData {
     GraduationTiers graduationTier;
 }
 
-contract MacroAlumniSBT is ERC721, Ownable {
+contract MacroAlumniSBT is ERC721Admin {
     /// @notice the total number of tokens, and the ID of the next SBT to be minted
     uint256 public tokenSupply;
+
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
 
@@ -48,12 +48,12 @@ contract MacroAlumniSBT is ERC721, Ownable {
         string memory _baseURI,
         bytes32 _root,
         address _owner
-    ) ERC721("Macro Alumni Soulbound Token", "MASBT") {
+    ) ERC721Admin("Macro Alumni Soulbound Token", "MASBT") {
         baseTokenURI = _baseURI;
         emit BaseURISet(_baseURI);
         root = _root;
         emit MerkleRootSet(_root);
-        _transferOwnership(_owner);
+        transferOwnership(_owner);
     }
 
     /// @notice Emitted when the locking status is changed to locked.
@@ -96,11 +96,6 @@ contract MacroAlumniSBT is ERC721, Ownable {
         // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
         _safeMint(to, tokenSupply);
 
-        // ensure that the Instruction team can always transfer tokens
-        address owner = owner();
-        isApprovedForAll[to][owner] = true;
-        emit ApprovalForAll(to, owner, true);
-
         emit Locked(tokenSupply);
 
         unchecked {
@@ -108,8 +103,7 @@ contract MacroAlumniSBT is ERC721, Ownable {
         }
     }
 
-    /// @notice burn does not delete alumni data stored in addressToAlumniData to save gas -- it does however delete the token from the ERC721 implementation
-    /// @dev before calling burn, make sure to remove the owner's address from the merkletree and update the merkleroot by calling setMerkleRoot first to prevent the alumni from minting a token from the address that is having its token burned
+    /// @notice burn deletes alumni data stored in addressToAlumniData and deletes the token from the ERC721 implementation
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
@@ -127,20 +121,11 @@ contract MacroAlumniSBT is ERC721, Ownable {
         uint256 id
     ) public override onlyOwner {
         require(from != to, "INVALID");
+        require(addressToAlumniData[to].exists == false, "EXISTS");
 
         AlumniData storage alumniData = addressToAlumniData[from];
         addressToAlumniData[to] = alumniData;
         delete addressToAlumniData[from];
-
-        // ensure that the Instruction Team is always able to transfer minted tokens.
-        // Note: this will mean that the owner will slowly build up isApprovedForAll's
-        // across all the `to` addresses. It's not elegant, but it's OK since transfers
-        // are expected to be very infrequent.
-        address owner = owner();
-        if (isApprovedForAll[to][owner] == false) {
-            isApprovedForAll[to][owner] = true;
-            emit ApprovalForAll(to, owner, true);
-        }
 
         super.transferFrom(from, to, id);
     }
@@ -179,10 +164,10 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @notice set a new blockNumber for a particular address that holds an SBT
     /// @param alumniAddress the address that owns the SBT
     /// @param newNumber the new block for this SBT
-    function updateStudentBlockNumber(
-        address alumniAddress,
-        uint16 newNumber
-    ) external onlyOwner {
+    function updateStudentBlockNumber(address alumniAddress, uint16 newNumber)
+        external
+        onlyOwner
+    {
         addressToAlumniData[alumniAddress].blockNumber = newNumber;
     }
 
@@ -217,22 +202,6 @@ contract MacroAlumniSBT is ERC721, Ownable {
     function locked(uint256 tokenId) external view returns (bool) {
         require(ownerOf(tokenId) != address(0), "INVALID_TOKEN");
         return true;
-    }
-
-    function transferOwnership(address newOwner) public override onlyOwner {
-        uint _tokenSupply = tokenSupply;
-        unchecked {
-            for (uint i; i < _tokenSupply; ++i) {
-                // check if token exists, if not move to the next iteration. If we burn tokens and do not perform this check the whole operation will revert at the ownerOf() call
-                if(_ownerOf[i] == address(0)) { 
-                    continue;
-                }
-                address tokenOwner = ownerOf(i);
-                isApprovedForAll[tokenOwner][newOwner] = true;
-                emit ApprovalForAll(tokenOwner, newOwner, true);
-            }
-        }
-        super.transferOwnership(newOwner);
     }
 
     /// @dev this function returns the hash of alumni data, also known as a leaf in our merkle tree
