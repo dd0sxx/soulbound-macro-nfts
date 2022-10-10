@@ -27,6 +27,7 @@ struct AlumniData {
 contract MacroAlumniSBT is ERC721 {
     /// @notice the total number of tokens, and the ID of the next SBT to be minted
     uint256 public tokenSupply;
+
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
 
@@ -102,8 +103,7 @@ contract MacroAlumniSBT is ERC721 {
         }
     }
 
-    /// @notice burn does not delete alumni data stored in addressToAlumniData to save gas -- it does however delete the token from the ERC721 implementation
-    /// @dev before calling burn, make sure to remove the owner's address from the merkletree and update the merkleroot by calling setMerkleRoot first to prevent the alumni from minting a token from the address that is having its token burned
+    /// @notice burn deletes alumni data stored in addressToAlumniData and deletes the token from the ERC721 implementation
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
