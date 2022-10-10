@@ -24,7 +24,7 @@ struct AlumniData {
     GraduationTiers graduationTier;
 }
 
-contract MacroAlumniSBT is ERC721 {
+contract MacroAlumniSBT is ERC721Admin {
     /// @notice the total number of tokens, and the ID of the next SBT to be minted
     uint256 public tokenSupply;
 
@@ -48,7 +48,7 @@ contract MacroAlumniSBT is ERC721 {
         string memory _baseURI,
         bytes32 _root,
         address _owner
-    ) ERC721("Macro Alumni Soulbound Token", "MASBT") {
+    ) ERC721Admin("Macro Alumni Soulbound Token", "MASBT") {
         baseTokenURI = _baseURI;
         emit BaseURISet(_baseURI);
         root = _root;
