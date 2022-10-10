@@ -103,6 +103,34 @@ contract MacroAlumniSBT is ERC721Admin {
         }
     }
 
+    function batchAirdrop (
+        address[] calldata addresses, 
+        uint16[] calldata blockNumbers, 
+        GraduationTiers[] calldata gradTiers
+        ) external onlyOwner {
+            uint length = addresses.length;
+            require(length == blockNumbers.length && length == gradTiers.length, "INCONSISTENT_LENGTH");
+            unchecked {
+                for (uint i; i < length; ++i) {
+                    address currentAddress = addresses[i];
+                    require(claimed[currentAddress] == false, "CLAIMED");
+                    require(addressToAlumniData[currentAddress].exists == false, "ALREADY_EXISTS");
+
+                    claimed[msg.sender] = true;
+
+                    addressToAlumniData[currentAddress].exists = true;
+                    addressToAlumniData[currentAddress].blockNumber = blockNumbers[i];
+                    addressToAlumniData[currentAddress].graduationTier = gradTiers[i];
+
+                     _safeMint(currentAddress, tokenSupply);
+
+                    emit Locked(tokenSupply);
+
+                    tokenSupply++;
+                }
+            }
+    }
+
     /// @notice burn deletes alumni data stored in addressToAlumniData and deletes the token from the ERC721 implementation
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
