@@ -121,6 +121,7 @@ contract MacroAlumniSBT is ERC721Admin {
         uint256 id
     ) public override onlyOwner {
         require(from != to, "INVALID");
+        require(addressToAlumniData[to].exists == false, "EXISTS");
 
         AlumniData storage alumniData = addressToAlumniData[from];
         addressToAlumniData[to] = alumniData;
