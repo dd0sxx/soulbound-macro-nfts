@@ -163,10 +163,10 @@ contract MacroAlumniSBT is ERC721Admin {
     /// @notice set a new blockNumber for a particular address that holds an SBT
     /// @param alumniAddress the address that owns the SBT
     /// @param newNumber the new block for this SBT
-    function updateStudentBlockNumber(
-        address alumniAddress,
-        uint16 newNumber
-    ) external onlyOwner {
+    function updateStudentBlockNumber(address alumniAddress, uint16 newNumber)
+        external
+        onlyOwner
+    {
         addressToAlumniData[alumniAddress].blockNumber = newNumber;
     }
 
