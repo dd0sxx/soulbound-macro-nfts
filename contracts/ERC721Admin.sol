@@ -92,11 +92,6 @@ abstract contract ERC721Admin is Ownable {
 
         require(to != address(0), "INVALID_RECIPIENT");
 
-        require(
-            msg.sender == owner(),
-            "NOT_AUTHORIZED"
-        );
-
         // Underflow of the sender's balance is impossible because we check for
         // ownership above and the recipient's balance can't realistically overflow.
         unchecked {
