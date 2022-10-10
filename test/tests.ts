@@ -568,11 +568,21 @@ describe("Macro Alumni Soulbound Token", function () {
     )
 
     expect(await contract.tokenSupply()).to.deep.equal(dataRaw.length)
-    
+
     for (let i = 0; i < dataRaw.length; i++) {
       let alumni = dataRaw[i]
       expect(await contract.balanceOf(alumni.address)).to.deep.equal(1)
       expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, alumni.blockNumber, alumni.graduationTier])
     }
+
+    expect(contract.connect(owner).batchAirdrop(
+      dataRaw.map(alumni => alumni.address),
+      dataRaw.map(alumni => alumni.blockNumber),
+      dataRaw.map(alumni => alumni.graduationTier),
+    )).to.be.revertedWith("CLAIMED")
+
+    expect(contract.connect(owner).batchAirdrop([],[],[],)).to.be.revertedWith("INCONSISTENT_LENGTH")
+    expect(contract.connect(owner).batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"],[1],[],)).to.be.revertedWith("INCONSISTENT_LENGTH")
+    expect(contract.connect(owner).batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"],[],[1],)).to.be.revertedWith("INCONSISTENT_LENGTH")
   })
 });

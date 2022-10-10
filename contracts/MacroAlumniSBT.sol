@@ -109,7 +109,7 @@ contract MacroAlumniSBT is ERC721Admin {
         GraduationTiers[] calldata gradTiers
         ) external onlyOwner {
             uint length = addresses.length;
-            require(length == blockNumbers.length && length == gradTiers.length, "INCONSISTENT_LENGTH");
+            require(length > 0 && length == blockNumbers.length && length == gradTiers.length, "INCONSISTENT_LENGTH");
             unchecked {
                 for (uint i; i < length; ++i) {
                     address currentAddress = addresses[i];
