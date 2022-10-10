@@ -559,4 +559,20 @@ describe("Macro Alumni Soulbound Token", function () {
       await contract.addressToAlumniData(otherOtherAccount.address)
     ).to.deep.equal([true, 4, 4]);
   });
+
+  it("Should batch airdrop to graduated", async function () {
+    await contract.connect(owner).batchAirdrop(
+      dataRaw.map(alumni => alumni.address),
+      dataRaw.map(alumni => alumni.blockNumber),
+      dataRaw.map(alumni => alumni.graduationTier),
+    )
+
+    expect(await contract.tokenSupply()).to.deep.equal(dataRaw.length)
+    
+    for (let i = 0; i < dataRaw.length; i++) {
+      let alumni = dataRaw[i]
+      expect(await contract.balanceOf(alumni.address)).to.deep.equal(1)
+      expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, alumni.blockNumber, alumni.graduationTier])
+    }
+  })
 });
