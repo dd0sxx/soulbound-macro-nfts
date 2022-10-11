@@ -2,6 +2,8 @@
 
 This repo holds the contract code and test suite for the Macro Alumni SBTs.
 
+The Macro Alumni Souldbound Token's goal is to create a non-transferable on-chain record of Macro alumni that documents the block number of each alumni as well as the tier they graduated in. Given the soul bound nature of these tokens, in order to obtain one it must be earned through hard work by completing the Macro fellowship.
+
 ## Technical Details
 
 - **Contract:** Extends a customized version of [Solmate’s ERC-721.sol](https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol) & implements [ERC-5192](https://eips.ethereum.org/EIPS/eip-5192) ”Minimal Soulbound NFT” standard
