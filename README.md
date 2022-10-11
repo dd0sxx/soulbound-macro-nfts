@@ -10,6 +10,7 @@ This repo holds the contract code and test suite for the Macro Alumni SBTs.
 
   - Admin Features
     - Update Merkle Root (Staff: “New graduates!”) (`setMerkleRoot`)
+    - Mint NFTs on behalf of alumni (Staff: “Gift SBTs to og alumni!”) (`batchAirdrop`)
     - Burn existing NFT (Student: “I quit!”) (`burn`)
     - Transfer NFT (Student: “I changed my ETH address!”) (`transferFrom`)
     - Update Graduation Tier (Staff: “Oops, we messed up while grading.”) (`updateStudentGraduationTier`)
@@ -37,3 +38,5 @@ This repo holds the contract code and test suite for the Macro Alumni SBTs.
 - **Art**
   - Given that the art will be stored off-chain, we do not need to worry about it at this stage, since we know we will be accessing it via the `tokenURI` function.
   - The art will be served from a server that we host
+
+
