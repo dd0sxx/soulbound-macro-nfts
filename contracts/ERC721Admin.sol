@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @notice This contract is an edited version of Solmate's ERC721.sol contract which allows for automatic admin approvals on all tokens -- the only change is to line 96 of this contract
+/// @notice This contract is an edited version of Solmate's ERC721.sol contract which allows for automatic admin approvals on all tokens -- the only changes are to line 10 and 96 of this contract
 
 /// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
 /// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/tokens/ERC721.sol)
