@@ -103,6 +103,11 @@ contract MacroAlumniSBT is ERC721Admin {
         }
     }
 
+    /// @notice Function for admin to gift NFTs to alumni
+    /// @dev all arrays must be of the same length and the indexes of each array correspond to the same alumni data across each array
+    /// @param addresses array of alumni addresses which will receive tokens
+    /// @param blockNumbers and array of block (cohort) numbers that a given alumni graduated in
+    /// @param gradTiers array of enums representing how well an alumni did in the fellowship
     function batchAirdrop (
         address[] calldata addresses, 
         uint16[] calldata blockNumbers, 
