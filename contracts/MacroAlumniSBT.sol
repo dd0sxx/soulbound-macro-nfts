@@ -233,7 +233,7 @@ contract MacroAlumniSBT is ERC721Admin {
     /// about them do throw.
     /// @param tokenId The identifier for an SBT.
     function locked(uint256 tokenId) external view returns (bool) {
-        require(ownerOf(tokenId) != address(0), "INVALID_TOKEN");
+        ownerOf(tokenId);
         return true;
     }
 
