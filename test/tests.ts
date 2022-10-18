@@ -59,9 +59,13 @@ let generateMerkleTreeAndMint = async function () {
   );
   const proof = merkleTree.getHexProof(leaf);
 
-  await contract
+  const tx = await contract
     .connect(otherAccount)
     .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof);
+
+  const receipt = await tx.wait()
+  const tokenId = receipt.events[1].args.tokenId.toHexString()
+  return tokenId
 };
 
 function generateMerkleTree(): any {
@@ -140,7 +144,7 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier);
   });
 
-  it.only("Should allow alumni to mint an SBT to a different address than their own", async function () {
+  it("Should allow alumni to mint an SBT to a different address than their own", async function () {
     dataRaw[0].address = otherAccount.address;
     const alumni = dataRaw[0];
 
@@ -197,15 +201,11 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it("Should not allow an alumni to claim twice", async function () {
-    await generateMerkleTreeAndMint();
+    const tokenId = await generateMerkleTreeAndMint();
 
-    expect(await contract.ownerOf(0)).to.deep.equal(alumni.address);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      3,
-    ]);
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3]);
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
 
     const leaf = ethers.utils.solidityKeccak256(
       ["address", "uint16", "uint8"],
@@ -218,49 +218,6 @@ describe("Macro Alumni Soulbound Token", function () {
         .connect(otherAccount)
         .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
     ).to.be.revertedWith("CLAIMED");
-  });
-
-  it("Should not allow one alumni to overwrite the data of another alumni when minting their SBT", async function () {
-    dataRaw[1].address = differentAlumni.address;
-
-    await generateMerkleTreeAndMint();
-
-    expect(await contract.ownerOf(0)).to.deep.equal(otherAccount.address);
-    expect(
-      await contract.addressToAlumniData(otherAccount.address)
-    ).to.deep.equal([true, 1, 3]);
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3]);
-
-    const leaf = ethers.utils.solidityKeccak256(
-      ["address", "uint16", "uint8"],
-      [
-        differentAlumni.address,
-        dataRaw[1].blockNumber,
-        dataRaw[1].graduationTier,
-      ]
-    );
-    const proof = merkleTree.getHexProof(leaf);
-
-    expect(
-      contract
-        .connect(differentAlumni)
-        .mint(
-          otherAccount.address,
-          dataRaw[1].blockNumber,
-          dataRaw[1].graduationTier,
-          proof
-        )
-    ).to.be.revertedWith("ALREADY_EXISTS");
-
-    // now successfully mint to a different address
-    await contract
-      .connect(differentAlumni)
-      .mint(
-        differentAlumni.address,
-        dataRaw[1].blockNumber,
-        dataRaw[1].graduationTier,
-        proof
-      );
   });
 
   it("Admin can burn tokens", async function () {
