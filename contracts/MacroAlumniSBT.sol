@@ -13,33 +13,13 @@ enum GraduationTiers {
     ALUM
 }
 
-/// @notice this struct contains all of the data important to an alumni's graduation
-/// @param exists true if this struct has been assigned to an SBT
-/// @param blockNumber Macro refers to each group of students as a "block", and the first
-/// group of students who graduated were part of block 0
-/// @param graduationTier the ranking of the alumni
-struct AlumniData {
-    bool exists;
-    uint16 blockNumber;
-    GraduationTiers graduationTier;
-}
-
 contract MacroAlumniSBT is ERC721Admin {
-    /// @notice the total number of tokens, and the ID of the next SBT to be minted
-    uint256 public tokenSupply;
 
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
 
     /// @notice the Merkle root used to prove inclusion in the MerkleDrop
     bytes32 public root; // merkle root
-
-    /// @notice mapping used to store info about the alumni's SBT
-    mapping(address => AlumniData) public addressToAlumniData;
-
-    /// @notice mapping used to keep track of which addresses have
-    /// already claimed their SBT
-    mapping(address => bool) public claimed;
 
     /// @param _baseURI the URI which returns the SBT metadata
     /// @param _root the new merkle root
@@ -81,26 +61,11 @@ contract MacroAlumniSBT is ERC721Admin {
         bytes32[] calldata proof
     ) external {
         require(
-            _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
+           _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
             "INVALID_PROOF"
-        );
-        require(claimed[msg.sender] == false, "CLAIMED");
-        require(addressToAlumniData[to].exists == false, "ALREADY_EXISTS");
-
-        claimed[msg.sender] = true;
-
-        addressToAlumniData[to].exists = true;
-        addressToAlumniData[to].blockNumber = blockNumber;
-        addressToAlumniData[to].graduationTier = graduationTier;
-
-        // _safeMint over _mint to prevent sbts being minted to addesses that are not eligible ERC721 token receivers
-        _safeMint(to, tokenSupply);
-
-        emit Locked(tokenSupply);
-
-        unchecked {
-            tokenSupply++;
-        }
+         );
+        uint256 tokenId =  ( uint256(uint160(msg.sender)) << uint256(24) ) + ( uint256(blockNumber) << uint256(8) ) + uint256(uint8(graduationTier));
+        _create(to, tokenId);
     }
 
     /// @notice Function for admin to gift NFTs to alumni
@@ -118,20 +83,8 @@ contract MacroAlumniSBT is ERC721Admin {
             unchecked {
                 for (uint i; i < length; ++i) {
                     address currentAddress = addresses[i];
-                    require(claimed[currentAddress] == false, "CLAIMED");
-                    require(addressToAlumniData[currentAddress].exists == false, "ALREADY_EXISTS");
-
-                    claimed[msg.sender] = true;
-
-                    addressToAlumniData[currentAddress].exists = true;
-                    addressToAlumniData[currentAddress].blockNumber = blockNumbers[i];
-                    addressToAlumniData[currentAddress].graduationTier = gradTiers[i];
-
-                     _safeMint(currentAddress, tokenSupply);
-
-                    emit Locked(tokenSupply);
-
-                    tokenSupply++;
+                    uint256 tokenId = uint256(uint160(currentAddress)) << uint256(24) + uint256(blockNumbers[i]) << uint256(8) + uint256(uint8(gradTiers[i]));
+                    _create(addresses[i], tokenId);
                 }
             }
     }
@@ -140,8 +93,15 @@ contract MacroAlumniSBT is ERC721Admin {
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
-        delete addressToAlumniData[owner];
         _burn(tokenId);
+    }
+
+    /// @dev private function to abstract duplicate logic in mint and batchAirdrop
+    /// @param to address receiving the token
+    /// @param tokenId the token id to be minted
+    function _create(address to, uint256 tokenId) private {
+        _safeMint(to, tokenId); 
+		emit Locked(tokenId);
     }
 
     /// @dev onlyOwner incase the admin needs to transfer a token on behalf of an alumni
@@ -153,14 +113,18 @@ contract MacroAlumniSBT is ERC721Admin {
         address to,
         uint256 id
     ) public override onlyOwner {
-        require(from != to, "INVALID");
-        require(addressToAlumniData[to].exists == false, "EXISTS");
+        revert("NON_TRANSFERABLE");
+    }
 
-        AlumniData storage alumniData = addressToAlumniData[from];
-        addressToAlumniData[to] = alumniData;
-        delete addressToAlumniData[from];
-
-        super.transferFrom(from, to, id);
+    function blockNumber (uint256 tokenId) external pure returns (uint16) {
+        uint256 bnMask = 79228162514264337593543950335;
+        uint16 bn = uint16((tokenId >> uint256(8)) & bnMask);
+        return bn;
+    }
+    function graduationTier (uint256 tokenId) external pure returns (uint16) {
+        uint256 bnMask = 79228162514264337593543950335;
+        uint16 gradTier = uint16((tokenId >> uint256(8)) & bnMask);
+        return gradTier;
     }
 
     /// @dev returns the location of the asset corresponding to a specific token id
@@ -182,37 +146,6 @@ contract MacroAlumniSBT is ERC721Admin {
     function setMerkleRoot(bytes32 _root) external onlyOwner {
         root = _root;
         emit MerkleRootSet(_root);
-    }
-
-    /// @notice set a new graduationTier for a particular address that holds an SBT
-    /// @param alumniAddress the address that owns the SBT
-    /// @param newTier the new tier for this SBT
-    function updateStudentGraduationTier(
-        address alumniAddress,
-        GraduationTiers newTier
-    ) external onlyOwner {
-        addressToAlumniData[alumniAddress].graduationTier = newTier;
-    }
-
-    /// @notice set a new blockNumber for a particular address that holds an SBT
-    /// @param alumniAddress the address that owns the SBT
-    /// @param newNumber the new block for this SBT
-    function updateStudentBlockNumber(address alumniAddress, uint16 newNumber)
-        external
-        onlyOwner
-    {
-        addressToAlumniData[alumniAddress].blockNumber = newNumber;
-    }
-
-    /// @notice this is a convience function to enable alumni data to be queried by token id rather than by owner address
-    /// @param tokenId the id for the SBT token
-    function tokenIdToAlumniData(uint256 tokenId)
-        public
-        view
-        returns (AlumniData memory)
-    {
-        address owner = ownerOf(tokenId);
-        return addressToAlumniData[owner];
     }
 
     function supportsInterface(bytes4 interfaceId)
