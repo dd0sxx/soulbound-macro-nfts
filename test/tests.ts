@@ -22,7 +22,7 @@ interface StudentMerkleLeaf {
 let dataRaw: StudentMerkleLeaf[] = [
   {
     address: "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
-    blockNumber: 1,
+    blockNumber: 0,
     graduationTier: GraduationTiers.OG,
   },
   {
@@ -127,17 +127,17 @@ describe("Macro Alumni Soulbound Token", function () {
     );
     const proof = merkleTree.getHexProof(leaf);
 
-    await contract
+    const tx = await contract
       .connect(otherAccount)
       .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof);
 
-    expect(await contract.ownerOf(0)).to.deep.equal(alumni.address);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      3,
-    ]);
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3]);
+    const receipt = await tx.wait()
+    
+    const tokenId = receipt.events[1].args.tokenId.toHexString()
+
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber);
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier);
   });
 
   it("Should allow alumni to mint an SBT to a different address than their own", async function () {
