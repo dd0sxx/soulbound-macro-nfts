@@ -221,28 +221,19 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it("Admin can burn tokens", async function () {
-    await generateMerkleTreeAndMint();
+    const tokenId = await generateMerkleTreeAndMint();
 
-    expect(await contract.ownerOf(0)).to.deep.equal(alumni.address);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      3,
-    ]);
-    expect(await contract.tokenIdToAlumniData(0)).to.deep.equal([true, 1, 3]);
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
 
-    expect(contract.connect(otherAccount).burn(0)).to.be.revertedWith(
+    expect(contract.connect(otherAccount).burn(tokenId)).to.be.revertedWith(
       "Ownable: caller is not the owner"
     );
 
-    await contract.connect(owner).burn(0);
+    await contract.connect(owner).burn(tokenId);
     expect(await contract.balanceOf(alumni.address)).to.deep.equal(0);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      false,
-      0,
-      0,
-    ]);
-    expect(contract.tokenIdToAlumniData(0)).to.be.revertedWith("NOT_MINTED");
+    expect(contract.ownerOf(tokenId)).to.be.revertedWith("NOT_MINTED");
   });
 
   it("Alumni cannot mint token after their token has been burned", async function () {
