@@ -117,14 +117,10 @@ contract MacroAlumniSBT is ERC721Admin {
     }
 
     function blockNumber (uint256 tokenId) external pure returns (uint16) {
-        uint256 bnMask = 79228162514264337593543950335;
-        uint16 bn = uint16((tokenId >> uint256(8)) & bnMask);
-        return bn;
+        return uint16(  tokenId >> uint256(8) );
     }
     function graduationTier (uint256 tokenId) external pure returns (uint16) {
-        uint256 gtMask = 0xff;
-        uint16 gt = uint16(tokenId & gtMask);
-        return gt;
+        return uint8(tokenId );
     }
 
     /// @dev returns the location of the asset corresponding to a specific token id
