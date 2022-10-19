@@ -15,7 +15,6 @@ enum GraduationTiers {
 }
 
 contract MacroAlumniSBT is ERC721, Ownable {
-
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
 
@@ -64,9 +63,9 @@ contract MacroAlumniSBT is ERC721, Ownable {
         bytes32[] calldata proof
     ) external {
         require(
-           _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
+            _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
             "INVALID_PROOF"
-         );
+        );
         _create(msg.sender, blockNumber, graduationTier, to);
     }
 
@@ -75,19 +74,29 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @param addresses array of alumni addresses which will receive tokens
     /// @param blockNumbers and array of block (cohort) numbers that a given alumni graduated in
     /// @param gradTiers array of enums representing how well an alumni did in the fellowship
-    function batchAirdrop (
-        address[] calldata addresses, 
-        uint16[] calldata blockNumbers, 
+    function batchAirdrop(
+        address[] calldata addresses,
+        uint16[] calldata blockNumbers,
         GraduationTiers[] calldata gradTiers
-        ) external onlyOwner {
-            uint length = addresses.length;
-            require(length > 0 && length == blockNumbers.length && length == gradTiers.length, "INCONSISTENT_LENGTH");
-            unchecked {
-                for (uint i; i < length; ++i) {
-                    address currentAddress = addresses[i];
-                    _create(currentAddress, blockNumbers[i], gradTiers[i], currentAddress);
-                }
+    ) external onlyOwner {
+        uint256 length = addresses.length;
+        require(
+            length > 0 &&
+                length == blockNumbers.length &&
+                length == gradTiers.length,
+            "INCONSISTENT_LENGTH"
+        );
+        unchecked {
+            for (uint256 i; i < length; ++i) {
+                address currentAddress = addresses[i];
+                _create(
+                    currentAddress,
+                    blockNumbers[i],
+                    gradTiers[i],
+                    currentAddress
+                );
             }
+        }
     }
 
     /// @dev private function to abstract duplicate logic in mint and batchAirdrop
@@ -95,10 +104,17 @@ contract MacroAlumniSBT is ERC721, Ownable {
     /// @param blockNumber the block (cohort) number that a given alumni graduated in
     /// @param gradTier enum representing how well an alumni did in the fellowship
     /// @param to address receiving the token
-    function _create(address verifiedAddress, uint16 blockNumber, GraduationTiers gradTier, address to) private {
-        uint256 tokenId =  ( uint256(uint160(verifiedAddress)) << uint256(24) ) + ( uint256(blockNumber) << uint256(8) ) + uint256(uint8(gradTier));
-        _safeMint(to, tokenId); 
-		emit Locked(tokenId);
+    function _create(
+        address verifiedAddress,
+        uint16 blockNumber,
+        GraduationTiers gradTier,
+        address to
+    ) private {
+        uint256 tokenId = (uint256(uint160(verifiedAddress)) << uint256(24)) +
+            (uint256(blockNumber) << uint256(8)) +
+            uint256(uint8(gradTier));
+        _safeMint(to, tokenId);
+        emit Locked(tokenId);
     }
 
     /// @notice burn deletes the token from the ERC721 implementation
@@ -124,16 +140,16 @@ contract MacroAlumniSBT is ERC721, Ownable {
 
     /// @notice view function that returns the block number for a given tokenId
     /// @param tokenId the token id requested
-    function blockNumber (uint256 tokenId) external view returns (uint16) {
+    function blockNumber(uint256 tokenId) external view returns (uint16) {
         ownerOf(tokenId);
-        return uint16(  tokenId >> uint256(8) );
+        return uint16(tokenId >> uint256(8));
     }
 
     /// @notice view function that returns the graduation tier for a given tokenId
     /// @param tokenId the token id requested
-    function graduationTier (uint256 tokenId) external view returns (uint16) {
+    function graduationTier(uint256 tokenId) external view returns (uint16) {
         ownerOf(tokenId);
-        return uint8(tokenId );
+        return uint8(tokenId);
     }
 
     /// @dev returns the location of the asset corresponding to a specific token id
