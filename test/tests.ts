@@ -258,7 +258,7 @@ describe("Macro Alumni Soulbound Token", function () {
     );
   });
 
-  it.only("Should revert when locked is called with an invalid token id", async function () {
+  it("Should revert when locked is called with an invalid token id", async function () {
     expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN");
     const tokenId = await generateMerkleTreeAndMint();
     expect(await contract.locked(tokenId)).to.deep.equal(true);
@@ -267,46 +267,33 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it("Should allow admin to update a students graduation tier", async function () {
-    await generateMerkleTreeAndMint();
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      3,
-    ]);
-    await contract
-      .connect(owner)
-      .updateStudentGraduationTier(alumni.address, 0);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      0,
-    ]);
-    expect(
-      contract.connect(owner).updateStudentGraduationTier(alumni.address, 6)
-    ).to.be.revertedWith("function was called with incorrect parameters");
-    expect(
-      contract
-        .connect(otherAccount)
-        .updateStudentGraduationTier(alumni.address, 1)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
-  });
+    const tokenId = await generateMerkleTreeAndMint();
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
+    
+    await contract.connect(owner).burn(tokenId);
+    
+    expect(contract.ownerOf(tokenId)).to.be.revertedWith("");
+    expect(await contract.balanceOf(alumni.address)).to.deep.equal(0);
+    
+    await contract.connect(owner).batchAirdrop([alumni.address],[alumni.blockNumber],[alumni.graduationTier])
 
-  it("Should allow admin to update a students block number", async function () {
-    await generateMerkleTreeAndMint();
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      1,
-      3,
-    ]);
-    await contract.connect(owner).updateStudentBlockNumber(alumni.address, 0);
-    expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([
-      true,
-      0,
-      3,
-    ]);
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
+
+    const leaf = ethers.utils.solidityKeccak256(
+      ["address", "uint16", "uint8"],
+      [alumni.address, alumni.blockNumber, alumni.graduationTier]
+    );
+    const proof = merkleTree.getHexProof(leaf);
+  
     expect(
-      contract.connect(otherAccount).updateStudentBlockNumber(alumni.address, 1)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    contract
+    .connect(otherAccount)
+    .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
+    ).to.be.revertedWith("ALREADY_MINTED")
   });
 
   it("Should protect against non-admin calls to safeTransferFrom", async function () {
