@@ -50,6 +50,8 @@ contract MacroAlumniSBT is ERC721Admin {
     event BaseURISet(string baseURI);
 
     /// @notice Function for alumni to claim their SBT
+    /// @dev The tokenId contains the alumni's address, block number, and graduation tier
+    /// @dev Replay mint attacks are prevented because a given alumni's tokenId will always be the same, and duplicate tokenIds cannot be minted
     /// @param to address they would like to soul bound the token to
     /// @param blockNumber the block (cohort) number that a given alumni graduated in
     /// @param graduationTier enum representing how well an alumni did in the fellowship
@@ -89,7 +91,8 @@ contract MacroAlumniSBT is ERC721Admin {
             }
     }
 
-    /// @notice burn deletes alumni data stored in addressToAlumniData and deletes the token from the ERC721 implementation
+    /// @notice burn deletes the token from the ERC721 implementation
+    /// @dev burn will be used to update alumni data or "transfer" tokens to new address by burning and minting a new SBT
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
@@ -104,7 +107,7 @@ contract MacroAlumniSBT is ERC721Admin {
 		emit Locked(tokenId);
     }
 
-    /// @dev onlyOwner incase the admin needs to transfer a token on behalf of an alumni
+    /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
     /// @param from address of token holder wishing to transfer their token
     /// @param to address the token will be transfered to
     /// @param id token id that will be transfered
@@ -112,14 +115,21 @@ contract MacroAlumniSBT is ERC721Admin {
         address from,
         address to,
         uint256 id
-    ) public override onlyOwner {
+    ) public override {
         revert("NON_TRANSFERABLE");
     }
 
-    function blockNumber (uint256 tokenId) external pure returns (uint16) {
+    /// @notice view function that returns the block number for a given tokenId
+    /// @param tokenId the token id requested
+    function blockNumber (uint256 tokenId) external view returns (uint16) {
+        ownerOf(tokenId);
         return uint16(  tokenId >> uint256(8) );
     }
-    function graduationTier (uint256 tokenId) external pure returns (uint16) {
+
+    /// @notice view function that returns the graduation tier for a given tokenId
+    /// @param tokenId the token id requested
+    function graduationTier (uint256 tokenId) external view returns (uint16) {
+        ownerOf(tokenId);
         return uint8(tokenId );
     }
 
