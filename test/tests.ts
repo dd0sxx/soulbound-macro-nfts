@@ -318,7 +318,7 @@ describe("Macro Alumni Soulbound Token", function () {
     ).to.be.revertedWith("Ownable: caller is not the owner");
   });
 
-  it.only("Should batch airdrop to graduated", async function () {
+  it("Should batch airdrop to graduated", async function () {
     const tx = await contract.connect(owner).batchAirdrop(
       dataRaw.map(alumni => alumni.address),
       dataRaw.map(alumni => alumni.blockNumber),
