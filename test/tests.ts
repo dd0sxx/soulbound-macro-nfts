@@ -319,18 +319,26 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it.only("Should batch airdrop to graduated", async function () {
-    await contract.connect(owner).batchAirdrop(
+    const tx = await contract.connect(owner).batchAirdrop(
       dataRaw.map(alumni => alumni.address),
       dataRaw.map(alumni => alumni.blockNumber),
       dataRaw.map(alumni => alumni.graduationTier),
     )
 
-    expect(await contract.tokenSupply()).to.deep.equal(dataRaw.length)
+    const receipt = await tx.wait()
+
+    let tokenIds = []
+
+    tokenIds.push(receipt.events[1].args.tokenId.toHexString())
+    tokenIds.push(receipt.events[3].args.tokenId.toHexString())
+    tokenIds.push(receipt.events[5].args.tokenId.toHexString())
+    tokenIds.push(receipt.events[7].args.tokenId.toHexString())
 
     for (let i = 0; i < dataRaw.length; i++) {
       let alumni = dataRaw[i]
       expect(await contract.balanceOf(alumni.address)).to.deep.equal(1)
-      expect(await contract.addressToAlumniData(alumni.address)).to.deep.equal([true, alumni.blockNumber, alumni.graduationTier])
+      expect(await contract.blockNumber(tokenIds[i])).to.deep.equal(alumni.blockNumber)
+      expect(await contract.graduationTier(tokenIds[i])).to.deep.equal(alumni.graduationTier)
     }
 
     expect(contract.connect(owner).batchAirdrop(
