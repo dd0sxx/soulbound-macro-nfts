@@ -248,7 +248,7 @@ describe("Macro Alumni Soulbound Token", function () {
     ).to.be.revertedWith("");
   });
 
-  it.only("Should return the correct token URI", async function () {
+  it("Should return the correct token URI", async function () {
     const tokenId = await generateMerkleTreeAndMint();
 
     await contract.connect(owner).setBaseURI("https://0xmacro.com/alumniSBT/");
@@ -258,12 +258,12 @@ describe("Macro Alumni Soulbound Token", function () {
     );
   });
 
-  it("Should revert when locked is called with an invalid token id", async function () {
+  it.only("Should revert when locked is called with an invalid token id", async function () {
     expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN");
-    await generateMerkleTreeAndMint();
-    expect(await contract.locked(0)).to.deep.equal(true);
-    await contract.connect(owner).burn(0);
-    expect(contract.locked(0)).to.be.revertedWith("INVALID_TOKEN");
+    const tokenId = await generateMerkleTreeAndMint();
+    expect(await contract.locked(tokenId)).to.deep.equal(true);
+    await contract.connect(owner).burn(tokenId);
+    expect(contract.locked(tokenId)).to.be.revertedWith("INVALID_TOKEN");
   });
 
   it("Should allow admin to update a students graduation tier", async function () {
