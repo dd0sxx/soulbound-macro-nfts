@@ -84,7 +84,7 @@ contract MacroAlumniSBT is ERC721Admin {
             unchecked {
                 for (uint i; i < length; ++i) {
                     address currentAddress = addresses[i];
-                    _create(currentAddress, blockNumbers[i], gradTiers[i], addresses[i]);
+                    _create(currentAddress, blockNumbers[i], gradTiers[i], currentAddress);
                 }
             }
     }
@@ -104,7 +104,6 @@ contract MacroAlumniSBT is ERC721Admin {
     /// @dev burn will be used to update alumni data or "transfer" tokens to new address by burning and minting a new SBT
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
-        address owner = ownerOf(tokenId);
         _burn(tokenId);
     }
 
