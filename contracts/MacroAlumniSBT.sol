@@ -127,7 +127,7 @@ contract MacroAlumniSBT is ERC721Admin {
     /// @param id the token id for the asset being requested
     function tokenURI(uint256 id) public view override returns (string memory) {
         ownerOf(id); // ownerOf will revert if the token does not exist
-        return string.concat(baseTokenURI, Strings.toString(id), ".json");
+        return string.concat(baseTokenURI, Strings.toHexString(id), ".json");
     }
 
     /// @dev updates the base uri in storage where the assets for the colleciton are held

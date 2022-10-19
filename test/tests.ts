@@ -248,7 +248,7 @@ describe("Macro Alumni Soulbound Token", function () {
     ).to.be.revertedWith("");
   });
 
-  it("Should return the correct token URI", async function () {
+  it.only("Should return the correct token URI", async function () {
     const tokenId = await generateMerkleTreeAndMint();
 
     await contract.connect(owner).setBaseURI("https://0xmacro.com/alumniSBT/");
