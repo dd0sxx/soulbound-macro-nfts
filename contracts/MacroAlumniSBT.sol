@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.17;
 
-import "./ERC721Admin.sol";
+import "solmate/src/tokens/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
@@ -13,7 +14,7 @@ enum GraduationTiers {
     ALUM
 }
 
-contract MacroAlumniSBT is ERC721Admin {
+contract MacroAlumniSBT is ERC721, Ownable {
 
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
@@ -28,7 +29,7 @@ contract MacroAlumniSBT is ERC721Admin {
         string memory _baseURI,
         bytes32 _root,
         address _owner
-    ) ERC721Admin("Macro Alumni Soulbound Token", "MASBT") {
+    ) ERC721("Macro Alumni Soulbound Token", "MASBT") {
         baseTokenURI = _baseURI;
         emit BaseURISet(_baseURI);
         root = _root;
