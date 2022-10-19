@@ -63,9 +63,9 @@ let generateMerkleTreeAndMint = async function () {
     .connect(otherAccount)
     .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof);
 
-  const receipt = await tx.wait()
-  const tokenId = receipt.events[1].args.tokenId.toHexString()
-  return tokenId
+  const receipt = await tx.wait();
+  const tokenId = receipt.events[1].args.tokenId.toHexString();
+  return tokenId;
 };
 
 function generateMerkleTree(): any {
@@ -135,13 +135,17 @@ describe("Macro Alumni Soulbound Token", function () {
       .connect(otherAccount)
       .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof);
 
-    const receipt = await tx.wait()
+    const receipt = await tx.wait();
 
-    const tokenId = receipt.events[1].args.tokenId.toHexString()
+    const tokenId = receipt.events[1].args.tokenId.toHexString();
 
     expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
-    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber);
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
   });
 
   it("Should allow alumni to mint an SBT to a different address than their own", async function () {
@@ -164,17 +168,21 @@ describe("Macro Alumni Soulbound Token", function () {
         alumni.blockNumber,
         alumni.graduationTier,
         proof
+      );
+
+    const receipt = await tx.wait();
+
+    const tokenId = receipt.events[1].args.tokenId.toHexString();
+
+    expect(await contract.ownerOf(tokenId)).to.deep.equal(
+      differentAlumni.address
     );
-
-    const receipt = await tx.wait()
-
-    const tokenId = receipt.events[1].args.tokenId.toHexString()
-
-    expect(await contract.ownerOf(tokenId)).to.deep.equal(differentAlumni.address);
-    expect(
-      await contract.blockNumber(tokenId)
-    ).to.deep.equal(alumni.blockNumber);
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier);
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
   });
 
   it("Should not allow non alumni to mint, even with a valid proof", async function () {
@@ -204,8 +212,12 @@ describe("Macro Alumni Soulbound Token", function () {
     const tokenId = await generateMerkleTreeAndMint();
 
     expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
-    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
 
     const leaf = ethers.utils.solidityKeccak256(
       ["address", "uint16", "uint8"],
@@ -224,8 +236,12 @@ describe("Macro Alumni Soulbound Token", function () {
     const tokenId = await generateMerkleTreeAndMint();
 
     expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
-    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
 
     expect(contract.connect(otherAccount).burn(tokenId)).to.be.revertedWith(
       "Ownable: caller is not the owner"
@@ -269,31 +285,45 @@ describe("Macro Alumni Soulbound Token", function () {
   it("Should allow admin to update a students graduation tier", async function () {
     const tokenId = await generateMerkleTreeAndMint();
     expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
-    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
-    
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
+
     await contract.connect(owner).burn(tokenId);
-    
+
     expect(contract.ownerOf(tokenId)).to.be.revertedWith("");
     expect(await contract.balanceOf(alumni.address)).to.deep.equal(0);
-    
-    await contract.connect(owner).batchAirdrop([alumni.address],[alumni.blockNumber],[alumni.graduationTier])
+
+    await contract
+      .connect(owner)
+      .batchAirdrop(
+        [alumni.address],
+        [alumni.blockNumber],
+        [alumni.graduationTier]
+      );
 
     expect(await contract.ownerOf(tokenId)).to.deep.equal(alumni.address);
-    expect(await contract.blockNumber(tokenId)).to.deep.equal(alumni.blockNumber)
-    expect(await contract.graduationTier(tokenId)).to.deep.equal(alumni.graduationTier)
+    expect(await contract.blockNumber(tokenId)).to.deep.equal(
+      alumni.blockNumber
+    );
+    expect(await contract.graduationTier(tokenId)).to.deep.equal(
+      alumni.graduationTier
+    );
 
     const leaf = ethers.utils.solidityKeccak256(
       ["address", "uint16", "uint8"],
       [alumni.address, alumni.blockNumber, alumni.graduationTier]
     );
     const proof = merkleTree.getHexProof(leaf);
-  
+
     expect(
-    contract
-    .connect(otherAccount)
-    .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
-    ).to.be.revertedWith("ALREADY_MINTED")
+      contract
+        .connect(otherAccount)
+        .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
+    ).to.be.revertedWith("ALREADY_MINTED");
   });
 
   it("Should protect against non-admin calls to safeTransferFrom", async function () {
@@ -320,35 +350,51 @@ describe("Macro Alumni Soulbound Token", function () {
 
   it("Should batch airdrop to graduated", async function () {
     const tx = await contract.connect(owner).batchAirdrop(
-      dataRaw.map(alumni => alumni.address),
-      dataRaw.map(alumni => alumni.blockNumber),
-      dataRaw.map(alumni => alumni.graduationTier),
-    )
+      dataRaw.map((alumni) => alumni.address),
+      dataRaw.map((alumni) => alumni.blockNumber),
+      dataRaw.map((alumni) => alumni.graduationTier)
+    );
 
-    const receipt = await tx.wait()
+    const receipt = await tx.wait();
 
-    let tokenIds = []
+    let tokenIds = [];
 
-    tokenIds.push(receipt.events[1].args.tokenId.toHexString())
-    tokenIds.push(receipt.events[3].args.tokenId.toHexString())
-    tokenIds.push(receipt.events[5].args.tokenId.toHexString())
-    tokenIds.push(receipt.events[7].args.tokenId.toHexString())
+    tokenIds.push(receipt.events[1].args.tokenId.toHexString());
+    tokenIds.push(receipt.events[3].args.tokenId.toHexString());
+    tokenIds.push(receipt.events[5].args.tokenId.toHexString());
+    tokenIds.push(receipt.events[7].args.tokenId.toHexString());
 
     for (let i = 0; i < dataRaw.length; i++) {
-      let alumni = dataRaw[i]
-      expect(await contract.balanceOf(alumni.address)).to.deep.equal(1)
-      expect(await contract.blockNumber(tokenIds[i])).to.deep.equal(alumni.blockNumber)
-      expect(await contract.graduationTier(tokenIds[i])).to.deep.equal(alumni.graduationTier)
+      let alumni = dataRaw[i];
+      expect(await contract.balanceOf(alumni.address)).to.deep.equal(1);
+      expect(await contract.blockNumber(tokenIds[i])).to.deep.equal(
+        alumni.blockNumber
+      );
+      expect(await contract.graduationTier(tokenIds[i])).to.deep.equal(
+        alumni.graduationTier
+      );
     }
 
-    expect(contract.connect(owner).batchAirdrop(
-      dataRaw.map(alumni => alumni.address),
-      dataRaw.map(alumni => alumni.blockNumber),
-      dataRaw.map(alumni => alumni.graduationTier),
-    )).to.be.revertedWith("CLAIMED")
+    expect(
+      contract.connect(owner).batchAirdrop(
+        dataRaw.map((alumni) => alumni.address),
+        dataRaw.map((alumni) => alumni.blockNumber),
+        dataRaw.map((alumni) => alumni.graduationTier)
+      )
+    ).to.be.revertedWith("CLAIMED");
 
-    expect(contract.connect(owner).batchAirdrop([],[],[],)).to.be.revertedWith("INCONSISTENT_LENGTH")
-    expect(contract.connect(owner).batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"],[1],[],)).to.be.revertedWith("INCONSISTENT_LENGTH")
-    expect(contract.connect(owner).batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"],[],[1],)).to.be.revertedWith("INCONSISTENT_LENGTH")
-  })
+    expect(contract.connect(owner).batchAirdrop([], [], [])).to.be.revertedWith(
+      "INCONSISTENT_LENGTH"
+    );
+    expect(
+      contract
+        .connect(owner)
+        .batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"], [1], [])
+    ).to.be.revertedWith("INCONSISTENT_LENGTH");
+    expect(
+      contract
+        .connect(owner)
+        .batchAirdrop(["0xdeadbeefdeadbeefdeadbeefdeadbeefdead0000"], [], [1])
+    ).to.be.revertedWith("INCONSISTENT_LENGTH");
+  });
 });
