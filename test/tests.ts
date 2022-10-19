@@ -249,12 +249,12 @@ describe("Macro Alumni Soulbound Token", function () {
   });
 
   it("Should return the correct token URI", async function () {
-    await generateMerkleTreeAndMint();
+    const tokenId = await generateMerkleTreeAndMint();
 
     await contract.connect(owner).setBaseURI("https://0xmacro.com/alumniSBT/");
 
-    expect(await contract.tokenURI(0)).to.deep.equal(
-      "https://0xmacro.com/alumniSBT/0.json"
+    expect(await contract.tokenURI(tokenId)).to.deep.equal(
+      `https://0xmacro.com/alumniSBT/${tokenId}.json`
     );
   });
 
