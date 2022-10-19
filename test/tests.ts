@@ -236,34 +236,16 @@ describe("Macro Alumni Soulbound Token", function () {
     expect(contract.ownerOf(tokenId)).to.be.revertedWith("NOT_MINTED");
   });
 
-  it("Alumni cannot mint token after their token has been burned", async function () {
-    await generateMerkleTreeAndMint();
-
-    const leaf = ethers.utils.solidityKeccak256(
-      ["address", "uint16", "uint8"],
-      [alumni.address, alumni.blockNumber, alumni.graduationTier]
-    );
-    const proof = merkleTree.getHexProof(leaf);
-
-    await contract.connect(owner).burn(0);
-
-    expect(
-      contract
-        .connect(otherAccount)
-        .mint(alumni.address, alumni.blockNumber, alumni.graduationTier, proof)
-    ).to.be.revertedWith("CLAIMED");
-  });
-
   it("Tokens are locked and non-transferable", async function () {
-    await generateMerkleTreeAndMint();
+    const tokenId = await generateMerkleTreeAndMint();
 
-    expect(await contract.locked(0)).to.deep.equal(true);
+    expect(await contract.locked(tokenId)).to.deep.equal(true);
 
     expect(
       contract
         .connect(otherAccount)
         .transferFrom(otherAccount.address, owner.address, 0)
-    ).to.be.revertedWith("Ownable: caller is not the owner");
+    ).to.be.revertedWith("");
   });
 
   it("cannot transfer token to current holder", async function () {
