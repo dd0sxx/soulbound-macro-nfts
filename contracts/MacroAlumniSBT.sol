@@ -66,8 +66,7 @@ contract MacroAlumniSBT is ERC721Admin {
            _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
             "INVALID_PROOF"
          );
-        uint256 tokenId =  ( uint256(uint160(msg.sender)) << uint256(24) ) + ( uint256(blockNumber) << uint256(8) ) + uint256(uint8(graduationTier));
-        _create(to, tokenId);
+        _create(msg.sender, blockNumber, graduationTier, to);
     }
 
     /// @notice Function for admin to gift NFTs to alumni
@@ -85,10 +84,20 @@ contract MacroAlumniSBT is ERC721Admin {
             unchecked {
                 for (uint i; i < length; ++i) {
                     address currentAddress = addresses[i];
-                    uint256 tokenId = ( uint256(uint160(currentAddress)) << uint256(24) ) + ( uint256(blockNumbers[i]) << uint256(8) ) + uint256(uint8(gradTiers[i]));
-                    _create(addresses[i], tokenId);
+                    _create(currentAddress, blockNumbers[i], gradTiers[i], addresses[i]);
                 }
             }
+    }
+
+    /// @dev private function to abstract duplicate logic in mint and batchAirdrop
+    /// @param verifiedAddress address within the merkle tree or batch airdrop "addresses" array
+    /// @param blockNumber the block (cohort) number that a given alumni graduated in
+    /// @param gradTier enum representing how well an alumni did in the fellowship
+    /// @param to address receiving the token
+    function _create(address verifiedAddress, uint16 blockNumber, GraduationTiers gradTier, address to) private {
+        uint256 tokenId =  ( uint256(uint160(verifiedAddress)) << uint256(24) ) + ( uint256(blockNumber) << uint256(8) ) + uint256(uint8(gradTier));
+        _safeMint(to, tokenId); 
+		emit Locked(tokenId);
     }
 
     /// @notice burn deletes the token from the ERC721 implementation
@@ -97,14 +106,6 @@ contract MacroAlumniSBT is ERC721Admin {
     function burn(uint256 tokenId) external onlyOwner {
         address owner = ownerOf(tokenId);
         _burn(tokenId);
-    }
-
-    /// @dev private function to abstract duplicate logic in mint and batchAirdrop
-    /// @param to address receiving the token
-    /// @param tokenId the token id to be minted
-    function _create(address to, uint256 tokenId) private {
-        _safeMint(to, tokenId); 
-		emit Locked(tokenId);
     }
 
     /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
