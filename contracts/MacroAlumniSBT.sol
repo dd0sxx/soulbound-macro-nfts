@@ -83,7 +83,7 @@ contract MacroAlumniSBT is ERC721Admin {
             unchecked {
                 for (uint i; i < length; ++i) {
                     address currentAddress = addresses[i];
-                    uint256 tokenId = uint256(uint160(currentAddress)) << uint256(24) + uint256(blockNumbers[i]) << uint256(8) + uint256(uint8(gradTiers[i]));
+                    uint256 tokenId = ( uint256(uint160(currentAddress)) << uint256(24) ) + ( uint256(blockNumbers[i]) << uint256(8) ) + uint256(uint8(gradTiers[i]));
                     _create(addresses[i], tokenId);
                 }
             }
