@@ -138,6 +138,14 @@ contract MacroAlumniSBT is ERC721, Ownable {
         revert("NON_TRANSFERABLE");
     }
 
+    /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
+    function setApprovalForAll(address operator, bool approved)
+        public
+        override
+    {
+        revert("NON_TRANSFERABLE");
+    }
+
     /// @notice view function that returns the block number for a given tokenId
     /// @param tokenId the token id requested
     function blockNumber(uint256 tokenId) external view returns (uint16) {
