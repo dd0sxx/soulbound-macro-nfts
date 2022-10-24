@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.17;
 
-import "./ERC721Admin.sol";
+import "solmate/src/tokens/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
@@ -13,8 +14,7 @@ enum GraduationTiers {
     ALUM
 }
 
-contract MacroAlumniSBT is ERC721Admin {
-
+contract MacroAlumniSBT is ERC721, Ownable {
     /// @notice baseURI where the SBT metadata is located
     string public baseTokenURI;
 
@@ -28,7 +28,7 @@ contract MacroAlumniSBT is ERC721Admin {
         string memory _baseURI,
         bytes32 _root,
         address _owner
-    ) ERC721Admin("Macro Alumni Soulbound Token", "MASBT") {
+    ) ERC721("Macro Alumni Soulbound Token", "MASBT") {
         baseTokenURI = _baseURI;
         emit BaseURISet(_baseURI);
         root = _root;
@@ -63,11 +63,10 @@ contract MacroAlumniSBT is ERC721Admin {
         bytes32[] calldata proof
     ) external {
         require(
-           _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
+            _verify(_leaf(msg.sender, blockNumber, graduationTier), proof),
             "INVALID_PROOF"
-         );
-        uint256 tokenId =  ( uint256(uint160(msg.sender)) << uint256(24) ) + ( uint256(blockNumber) << uint256(8) ) + uint256(uint8(graduationTier));
-        _create(to, tokenId);
+        );
+        _create(msg.sender, blockNumber, graduationTier, to);
     }
 
     /// @notice Function for admin to gift NFTs to alumni
@@ -75,42 +74,57 @@ contract MacroAlumniSBT is ERC721Admin {
     /// @param addresses array of alumni addresses which will receive tokens
     /// @param blockNumbers and array of block (cohort) numbers that a given alumni graduated in
     /// @param gradTiers array of enums representing how well an alumni did in the fellowship
-    function batchAirdrop (
-        address[] calldata addresses, 
-        uint16[] calldata blockNumbers, 
+    function batchAirdrop(
+        address[] calldata addresses,
+        uint16[] calldata blockNumbers,
         GraduationTiers[] calldata gradTiers
-        ) external onlyOwner {
-            uint length = addresses.length;
-            require(length > 0 && length == blockNumbers.length && length == gradTiers.length, "INCONSISTENT_LENGTH");
-            unchecked {
-                for (uint i; i < length; ++i) {
-                    address currentAddress = addresses[i];
-                    uint256 tokenId = ( uint256(uint160(currentAddress)) << uint256(24) ) + ( uint256(blockNumbers[i]) << uint256(8) ) + uint256(uint8(gradTiers[i]));
-                    _create(addresses[i], tokenId);
-                }
+    ) external onlyOwner {
+        uint256 length = addresses.length;
+        require(
+            length > 0 &&
+                length == blockNumbers.length &&
+                length == gradTiers.length,
+            "INCONSISTENT_LENGTH"
+        );
+        unchecked {
+            for (uint256 i; i < length; ++i) {
+                address currentAddress = addresses[i];
+                _create(
+                    currentAddress,
+                    blockNumbers[i],
+                    gradTiers[i],
+                    currentAddress
+                );
             }
+        }
+    }
+
+    /// @dev private function to abstract duplicate logic in mint and batchAirdrop
+    /// @param verifiedAddress address within the merkle tree or batch airdrop "addresses" array
+    /// @param blockNumber the block (cohort) number that a given alumni graduated in
+    /// @param gradTier enum representing how well an alumni did in the fellowship
+    /// @param to address receiving the token
+    function _create(
+        address verifiedAddress,
+        uint16 blockNumber,
+        GraduationTiers gradTier,
+        address to
+    ) private {
+        uint256 tokenId = (uint256(uint160(verifiedAddress)) << uint256(24)) +
+            (uint256(blockNumber) << uint256(8)) +
+            uint256(uint8(gradTier));
+        _safeMint(to, tokenId);
+        emit Locked(tokenId);
     }
 
     /// @notice burn deletes the token from the ERC721 implementation
     /// @dev burn will be used to update alumni data or "transfer" tokens to new address by burning and minting a new SBT
     /// @param tokenId tokenId which will be burned
     function burn(uint256 tokenId) external onlyOwner {
-        address owner = ownerOf(tokenId);
         _burn(tokenId);
     }
 
-    /// @dev private function to abstract duplicate logic in mint and batchAirdrop
-    /// @param to address receiving the token
-    /// @param tokenId the token id to be minted
-    function _create(address to, uint256 tokenId) private {
-        _safeMint(to, tokenId); 
-		emit Locked(tokenId);
-    }
-
     /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
-    /// @param from address of token holder wishing to transfer their token
-    /// @param to address the token will be transfered to
-    /// @param id token id that will be transfered
     function transferFrom(
         address from,
         address to,
@@ -119,18 +133,31 @@ contract MacroAlumniSBT is ERC721Admin {
         revert("NON_TRANSFERABLE");
     }
 
+    /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
+    function approve(address spender, uint256 id) public override {
+        revert("NON_TRANSFERABLE");
+    }
+
+    /// @dev will always revert - if tokens need to be transfered, an admin must burn and then mint a new one.
+    function setApprovalForAll(address operator, bool approved)
+        public
+        override
+    {
+        revert("NON_TRANSFERABLE");
+    }
+
     /// @notice view function that returns the block number for a given tokenId
     /// @param tokenId the token id requested
-    function blockNumber (uint256 tokenId) external view returns (uint16) {
+    function blockNumber(uint256 tokenId) external view returns (uint16) {
         ownerOf(tokenId);
-        return uint16(  tokenId >> uint256(8) );
+        return uint16(tokenId >> uint256(8));
     }
 
     /// @notice view function that returns the graduation tier for a given tokenId
     /// @param tokenId the token id requested
-    function graduationTier (uint256 tokenId) external view returns (uint16) {
+    function graduationTier(uint256 tokenId) external view returns (uint16) {
         ownerOf(tokenId);
-        return uint8(tokenId );
+        return uint8(tokenId);
     }
 
     /// @dev returns the location of the asset corresponding to a specific token id

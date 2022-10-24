@@ -40,5 +40,3 @@ The Macro Alumni Souldbound Token's goal is to create a non-transferable on-chai
 - **Art**
   - Given that the art will be stored off-chain, we do not need to worry about it at this stage, since we know we will be accessing it via the `tokenURI` function.
   - The art will be served from a server that we host
-
-
